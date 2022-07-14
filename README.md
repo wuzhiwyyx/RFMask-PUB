@@ -1,13 +1,5 @@
-# PyTorch Lightning Template
-
-[![license](https://img.shields.io/github/license/npurson/pytorch-lightning-template.svg)](LICENSE)
-
-[📘 Documentation](https://pytorch-lightning.readthedocs.io/en/latest/) •
-[🛠️ Install](#install) •
-[👋 Usage](#usage) •
-[🏷️ Reference](#reference) •
-[🤔 Contributing](#contributing) •
-[🔑 License](#license)
+# RFMask
+RFMask: A Simple Baseline for Human Silhouette Segmentation with Radio Signals
 
 ## Install
 
