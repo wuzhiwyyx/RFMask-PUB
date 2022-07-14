@@ -130,3 +130,6 @@ dmypy.json
 
 datasets/
 lightning_logs/
+
+# Temporary Files
+RFMask_trans_wma.py
