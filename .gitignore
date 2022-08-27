@@ -128,8 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-datasets/
-lightning_logs/
+data/*
+checkpoints/*
+
+.vscode/
 
 # Temporary Files
 RFMask_trans_wma.py
