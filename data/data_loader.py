@@ -13,6 +13,7 @@ import numpy as np
 import pickle
 import torch
 from torch.utils.data.dataloader import default_collate
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
 
 class RFDataset(data.Dataset):
@@ -194,3 +195,18 @@ def rf_collate(batch):
         hors = default_collate(hors)
         vers = default_collate(vers)
         return hors, vers, params, targets
+
+
+class RFTransform(GeneralizedRCNNTransform):
+    def __init__(self, min_size, max_size):
+        super(RFTransform, self).__init__(min_size, max_size, [0] * 6, [1] * 6)
+        
+    def normalize(self, image):
+        if not image.is_floating_point():
+            raise TypeError(
+                f"Expected input images to be of floating type (in range [0, 1]), "
+                f"but found type {image.dtype} instead"
+            )
+#         dtype, device = image.dtype, image.device
+        std, mean = torch.std_mean(image, dim=(1, 2), unbiased=True)
+        return (image - mean[:, None, None]) / std[:, None, None]
