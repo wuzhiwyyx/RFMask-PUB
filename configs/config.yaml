@@ -1,11 +1,12 @@
 # dataset path
-ROOT: &DATA_ROOT /share2/home/wuzhi/USTCData/
+TRAIN_DATA: &TRAIN_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_train.lmdb
+VAL_DATA: &VAL_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_val.lmdb
 B_ROOT: &BOX_ROOT /share2/home/wuzhi/workspace/rfmask/rfbox6.lmdb
 # subset
-# CATEGORIES: &CATEGORIES ['OCCLUSION']
+CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
 
 MODEL_NAME: &MODEL_NAME RFMask
-DATASET_NAME: &DATASET_NAME rf
+DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name or current model name
 EXPER: &EXPER 'base'
@@ -14,22 +15,25 @@ TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 12
+            BATCH_SIZE: &TRAIN_BATCH 200
             LEARNING_RATE: &LR 1.0e-4
     TRAINER:
-        MAX_EPOCHS: 200
-        PRECISION: 16
+        MAX_EPOCHS: 180
+        PRECISION: 32
         GPUS: -1
         ACCELERATOR: gpu
         STRATEGY: ddp # ddp_find_unused_parameters_false
         SYNC_BATCHNORM: true
-        RELOAD_DATALOADERS_EVERY_N_EPOCHS: 20
+        RELOAD_DATALOADERS_EVERY_N_EPOCHS: 10
+        LOG_EVERY_N_STEPS: 15
     TRAINSET:
         NAME: *DATASET_NAME
         DATASET:
-            ROOT: *DATA_ROOT
+            ROOT: *TRAIN_DATA
             # B_ROOT: *BOX_ROOT
             MODE: train
+            CATEGORIES: *CATEGORIES
+            VIEWS: &VIEWS [6]
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: true
@@ -37,10 +41,11 @@ TRAIN:
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
-            ROOT: *DATA_ROOT
+            ROOT: *VAL_DATA
             # B_ROOT: *BOX_ROOT
             MODE: val
-            # CATEGORIES: *CATEGORIES
+            CATEGORIES: *CATEGORIES
+            VIEWS: *VIEWS
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
@@ -59,10 +64,11 @@ EVAL:
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
-            ROOT: *DATA_ROOT
+            ROOT: *VAL_DATA
             # B_ROOT: *BOX_ROOT
             MODE: val
-            # CATEGORIES: *CATEGORIES
+            CATEGORIES: *CATEGORIES
+            VIEWS: *VIEWS
         LOADER:
             BATCH_SIZE: *VAL_BATCH
             SHUFFLE: false

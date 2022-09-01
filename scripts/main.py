@@ -3,17 +3,18 @@
  # @ Create Time: 2022-07-23 22:23:46
  # @ Modified by: Zhi Wu
  # @ Modified time: 2022-07-25 00:54:42
- # @ Description: Train script.
+ # @ Description: Train and evaluation script.
  '''
 
 import time
 import sys
+
 sys.path.append('.')  # run from project root
 import argparse
-import os
 import pickle
 import pprint
 
+from pathlib import Path
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -76,13 +77,13 @@ def eval(config, args, logger):
     logger.info('Building Evaluation dataset.')
     dataset, data_loader = load_dataset(config.valset)
 
-    pred_file = 'prediction.pkl'
-    if args.load_pred and os.path.exists(pred_file):
+    pred_file = Path('prediction.pkl')
+    if args.load_pred and pred_file.exists():
         logger.info(f'Loading {pred_file} file.')
         with open(pred_file, 'rb') as f:
             prediction = pickle.load(f)
     else:
-        if args.load_pred and not os.path.exists(pred_file):
+        if args.load_pred and not pred_file.exists():
             logger.info(f'Saved results {pred_file} not exists. Start to inference.')
         logger.info('Building model.')
         model = build_model(config.model)
@@ -108,12 +109,14 @@ def eval(config, args, logger):
         logger.info('Visualizing dataset.')
         frames = visualize(dataset, processed)
 
-        out_path = os.path.join('results', '%s_%.4f_%s.mp4' % 
-                        (config.exper, avg_iou, time.strftime("%Y-%m-%d-%H-%M-%S")))
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        # visualized result file
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S")
+        vis_file = f'{config.exper}_{avg_iou:.3f}_{current_time}.mp4'
+        out = Path('results') / vis_file
+        out.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.info('Save visualized results in %s.' % out_path)
-        generate_video(out_path, frames, ious)
+        logger.info(f'Visualized results are saved in {out}.')
+        generate_video(out / vis_file, frames, ious)
     logger.info('Evaluation finished.')
 
 
@@ -121,9 +124,9 @@ if __name__ == '__main__':
     args = parse_args()
     config = load_config(args.cfg)
     
-    logger = build_logger(config, args.mode)
+    logger = build_logger(config, args.mode, model_name='RFMask')
     logger.info(args)
-    logger.info('Configuration:\n' + pprint.pformat(config))
+    logger.info(f'Configuration:\n{pprint.pformat(config)}')
 
     if args.mode == 'train':
         train(config.train, args, logger)

@@ -20,8 +20,16 @@ from .roi_heads import RFRoIHeads
 from .utils import _onnx_paste_masks_in_image_loop
 
 class RFMask(nn.Module):
+    """RFMask model definition."""
+
     def __init__(self, num_classes=2):
+        """RFMask model constructor.
+
+        Args:
+            num_classes (int, optional): Number of categories to classifiy. Defaults to 2.
+        """
         nn.Module.__init__(self)
+        # Horizontal and vertical branches have the same structure.
         self.hbranch = Branch(Encoder())
         self.vbranch = Branch(Encoder())
         self.num_classes = num_classes
@@ -29,6 +37,15 @@ class RFMask(nn.Module):
         self.roi_heads = RFRoIHeads(self.hbranch.out_channels, num_classes, (624, 820))
 
     def prepare_targets(self, targets, key='hboxes'):
+        """Reorganize label structure.
+
+        Args:
+            targets (dict): Containing box and silhouette labels.
+            key (str, optional): Assign the value of targets[key] to targets['boxes']. Defaults to 'hboxes'.
+
+        Returns:
+            dict: Reorganized dict.
+        """
         if targets is None:
             return targets
         for target in targets:
@@ -88,41 +105,33 @@ class RFMask(nn.Module):
         return ret
         
     def forward(self, hor, ver, params, targets=None):
+        """Main inference function of RFMask model.
+
+        Args:
+            hor (FloatTensor): Horizontal RF frames.
+            ver (FloatTensor): Vertical RF frames.
+            params (IntTensor): View (Environment) index of each data in a batch which is used to load camera parameters.
+            targets (dict, optional): Label dict. Defaults to None.
         
-        # 通过水平分支和垂直分支backbone提取特征
-        # 同时利用RPN得到水平雷达数据的proposals
-        
-        # 标签处理，准备RPN所需标签
+        Returns:
+            result (list[dict]): Containing predicted results. list of {'boxes':boxes, 'labels':labels, 'scores':scores}.
+            losses (dict): Losses
+        """
+        # We use the off-the-shelf RPN model implemented by torchvision official code
+        # which could be found in torchvision.models.detection.rpn.
+        # RPN in torchvision automatically loads 'boxes' key in label dict as ground-truth.
         targets = self.prepare_targets(targets, 'hboxes')
         h_features, h_proposals, h_prop_losses, hor, h_target = self.hbranch(hor, targets)
-        # 标签处理，准备RPN所需标签
         targets = self.prepare_targets(targets, 'vboxes')
         v_features, v_proposals, v_prop_losses, ver, v_target = self.vbranch(ver, targets)
         
-      # 可视化proposals
-#         fig = plt.figure(figsize=(10, 5))
-#         axes = fig.subplots(1, 2)
-#         canvas = np.zeros((160, 200, 3), dtype=np.uint8)
-#         print([x.size() for x in h_proposals])
-#         for p in h_proposals[0].numpy():
-#             p = p.astype(np.int64)
-# #             print(p)
-#             canvas = cv2.rectangle(canvas, tuple(p[:2]), tuple(p[2:]), (255, 255, 255), 1)
-#         [axes[x].set_axis_off() for x in range(2)]
-#         axes[0].imshow(canvas)
-#         print(torch.unique(hor.tensors))
-#         axes[1].imshow(hor.tensors[0, 5, :, :].numpy())
-#         plt.pause(10)
-#         assert False
+        # Pack rpn outputs into tuples and feed them into roi_heads
         h_bundle = (h_features, h_proposals, hor.image_sizes)
         v_bundle = (v_features, v_proposals, ver.image_sizes)
-        
         result, losses = self.roi_heads(h_bundle, v_bundle, params, targets)
-#         h_roi_feats = self.box_roi_pool(h_features, h_proposals, hor.image_sizes)
-#         v_roi_feats = self.box_roi_pool(v_features, v_proposals, ver.image_sizes)
-#         print(h_roi_feats.size(), v_roi_feats.size())
+
+        # If targets is passed then loss value will be returned, else losses is None.
         if not targets is None:
-#         if self.training:
             rpn_loss = {}
             rpn_loss['loss_h_obj'] = h_prop_losses['loss_objectness']
             rpn_loss['loss_h_rpn_box'] = h_prop_losses['loss_rpn_box_reg']

@@ -15,10 +15,10 @@ from logging import StreamHandler, Handler, getLevelName
 import time
 
 
-def build_logger(config, phase='train'):
+def build_logger(config, phase='train', model_name='Model'):
     log_dir = 'log'
     os.makedirs(log_dir, exist_ok=True)
-    logger = setup_logger_ddp(config.exper, log_dir, time.strftime('%Y-%m-%d-%H-%M'), 0, phase)
+    logger = setup_logger_ddp(config.exper, log_dir, time.strftime('%Y-%m-%d-%H-%M'), 0, model_name, phase)
     return logger
 
 def get_logger(name, save_dir, verbosity=1, filename="log.txt"):
@@ -137,8 +137,8 @@ def setup_logger(name, save_dir, distributed_rank, filename="log.txt"):
 
     return logger
 
-def setup_logger_ddp(exp_name, save_dir, time_str, distributed_rank, phase='train'):
-    logger = logging.getLogger('RFTrack')
+def setup_logger_ddp(exp_name, save_dir, time_str, distributed_rank, model_name, phase='train'):
+    logger = logging.getLogger(model_name)
     logger.setLevel(logging.DEBUG)
     # don't log results for the non-master process
     if distributed_rank > 0:

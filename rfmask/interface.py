@@ -48,10 +48,10 @@ class RFMask(pl.LightningModule):
             loss += losses[k]
             
         # Logging to TensorBoard by default
-        self.log('loss', loss, batch_size=self.batch_size)
-        self.log('mask', losses['loss_mask'], batch_size=self.batch_size)
+        self.log('loss', loss, batch_size=self.batch_size, sync_dist=True)
+        self.log('mask', losses['loss_mask'], batch_size=self.batch_size, sync_dist=True)
         for k in self.loss_keys:
-            self.log('other/' + k, losses[k], batch_size=self.batch_size)
+            self.log('other/' + k, losses[k], batch_size=self.batch_size, sync_dist=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
@@ -59,10 +59,10 @@ class RFMask(pl.LightningModule):
         loss = 0
         for k in self.loss_keys:
             loss += losses[k]
-        self.log('val_loss', loss, batch_size=self.batch_size)
-        self.log('val_mask', losses['loss_mask'], batch_size=self.batch_size)
+        self.log('val_loss', loss, batch_size=self.batch_size, sync_dist=True)
+        self.log('val_mask', losses['loss_mask'], batch_size=self.batch_size, sync_dist=True)
         for k in self.loss_keys:
-            self.log('val_other/' + k, losses[k], batch_size=self.batch_size)
+            self.log('val_other/' + k, losses[k], batch_size=self.batch_size, sync_dist=True)
         return loss
 
     def configure_optimizers(self):

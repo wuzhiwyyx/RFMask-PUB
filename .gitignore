@@ -132,6 +132,8 @@ data/*
 checkpoints/*
 !README.md
 
+log/
+
 .vscode/
 
 # Temporary Files

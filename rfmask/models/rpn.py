@@ -12,7 +12,7 @@ from torchvision.models.detection.rpn import concat_box_prediction_layers
 
 
 class RFRPN(RegionProposalNetwork):
-    """RegionProposalNetwork"""
+    """Region Proposal Network definition which is copied from torchvision."""
 
     def __init__(self, out_channels=256):
         anchor_sizes = ((8, 16, 32, 64, 128),) * 5
