@@ -138,3 +138,4 @@ log/
 
 # Temporary Files
 RFMask_trans_wma.py
+*.txt
