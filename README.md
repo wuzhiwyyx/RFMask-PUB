@@ -22,6 +22,7 @@ pip install -r requirements.txt
 ### Training
 
 ```shell
+ulimit -n 1048576
 python scrips/main.py
 ```
 

@@ -8,6 +8,7 @@
 
 
 from copy import copy
+from turtle import shape
 from matplotlib.pyplot import box
 from torch.utils import data
 import os
@@ -25,7 +26,21 @@ class HIBERDataset(data.Dataset):
     """Load HIBER Dataset from lmdb format."""
 
     def __init__(self, root, transform=None, mode='train', 
-                    categories=['WALK'], views=[6], channels=12):
+                    categories=['WALK'], views=[6], channels=12, complex=False):
+        """HIBER Dataset constructor.
+
+        Args:
+            root (str): LMDB file path.
+            transform (callable, optional): Transform numpy data to torch.tensor. Defaults to None.
+            mode (str, optional): Train/test/val split of dataset. Defaults to 'train'.
+            categories (list, optional): Data categories, candidate categories are 
+                                            ['WALK', 'ACTION', 'MULTI', 'OCCLUSION', 'DARK']. Defaults to ['WALK'].
+            views (list, optional): Environments (views) to be used. Defaults to [6].
+            channels (int, optional): Channel number (sequence length) of output RF frames sequences. Defaults to 12.
+            complex (bool, optional): If true the shape of returned RF frame sequences is (channels, 2, 160, 200), 
+                                            '2' means real and image channel of original complex RF frame, 
+                                            else (channels, 160, 200). Defaults to False.
+        """
         self.root = root
         self.mode = mode
         self.views = views
@@ -33,6 +48,7 @@ class HIBERDataset(data.Dataset):
         self.hiber_dataset = hiber.HIBERDataset(root, categories, mode) 
         self.keys = self.__get_data_keys__()
         self.transform = transform
+        self.complex = complex
         self.env = lmdb.open(root, readonly=True, lock=False, readahead=False, meminit=False)
     
     def __len__(self):
@@ -67,11 +83,25 @@ class HIBERDataset(data.Dataset):
                     buf = txn.get(k.encode('ascii'))
                     if k.startswith('m'):
                         data = np.frombuffer(buf, dtype=bool)
+                    elif k.startswith(('h_', 'v_')):
+                        data = np.frombuffer(buf, dtype=np.complex128)
                     else:
                         data = np.frombuffer(buf, dtype=np.float64)
                     data_item.append(data)
-                data_item[0] = data_item[0].reshape(160, 200, 2)
-                data_item[1] = data_item[1].reshape(160, 200, 2)
+                                
+                data_item[0] = data_item[0].reshape(2, 160, 200)
+                data_item[1] = data_item[1].reshape(2, 160, 200)
+
+                if self.complex:
+                    data_item[0] = data_item[0].view(dtype=np.float64)
+                    data_item[1] = data_item[1].view(dtype=np.float64)
+                    data_item[0] = data_item[0].reshape(2, 160, 200, 2)
+                    data_item[1] = data_item[1].reshape(2, 160, 200, 2)
+                    data_item[0] = data_item[0].transpose((0, 3, 1, 2))
+                    data_item[1] = data_item[1].transpose((0, 3, 1, 2))
+                else:
+                    data_item[0] = np.abs(data_item[0])
+                    data_item[1] = np.abs(data_item[1])
                 data_item[2] = data_item[2].reshape(-1, 4)
                 data_item[3] = data_item[3].reshape(-1, 4)
                 data_item[4] = data_item[4].reshape(-1, 1248, 1640)
@@ -81,8 +111,8 @@ class HIBERDataset(data.Dataset):
                 assert data_item[4].shape[0]
                 data_items.append(data_item)
 
-        hors = np.concatenate([x[0] for x in data_items], axis=-1)
-        vers = np.concatenate([x[1] for x in data_items], axis=-1)
+        hors = np.concatenate([x[0] for x in data_items], axis=0)
+        vers = np.concatenate([x[1] for x in data_items], axis=0)
         hboxes = data_items[f - start][2]
         vboxes = data_items[f - start][3]
         silhouettes = data_items[f - start][4]
@@ -90,22 +120,30 @@ class HIBERDataset(data.Dataset):
         if self.transform:
             _ = self.transform(hors, vers, hboxes, vboxes, silhouettes, np.array(v), category=True)
             hors, vers, hboxes, vboxes, silhouettes, categories, v = _
-        return hors, vers, hboxes, vboxes, silhouettes, categories, v
+            return hors, vers, hboxes, vboxes, silhouettes, categories, v
+        else:
+            return hors, vers, hboxes, vboxes, silhouettes, v
     
 class HiberTrans():
     def norm(self, arr):
-        seq_len = arr.shape[-1]
-        mean_value = np.mean(arr.reshape(-1, seq_len), axis=0)
-        std_value = np.std(arr.reshape(-1, seq_len), axis=0)
-        arr = (arr - mean_value.reshape(1, 1, seq_len))
-        arr = arr / std_value.reshape(1, 1, seq_len)
+        
+        complex = False if len(arr.shape) == 3 else True
+        if complex:
+            arr = arr.reshape(-1, *arr.shape[2:])
+        seq_len = arr.shape[0]
+        mean_value = np.mean(arr.reshape(seq_len, -1), axis=-1)
+        std_value = np.std(arr.reshape(seq_len, -1), axis=-1)
+        arr = (arr - mean_value.reshape(seq_len, 1, 1))
+        arr = arr / std_value.reshape(seq_len, 1, 1)
+        if complex:
+            arr = arr.reshape(arr.shape[0] // 2, 2, *arr.shape[1:])
         return arr
     
     def __call__(self, hors, vers, hboxes, vboxes, silhouettes, v, category=False):
         hors = torch.from_numpy(self.norm(hors))
-        hors = hors.permute(2, 0, 1).float().contiguous()
+        hors = hors.float().contiguous()
         vers = torch.from_numpy(self.norm(vers))
-        vers = vers.permute(2, 0, 1).float().contiguous()
+        vers = vers.float().contiguous()
         
         # box shape: nperson, 4, seq_len
         hboxes = torch.from_numpy(hboxes.copy())

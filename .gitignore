@@ -138,4 +138,6 @@ log/
 
 # Temporary Files
 RFMask_trans_wma.py
+MITNet12.py
 *.txt
+test*

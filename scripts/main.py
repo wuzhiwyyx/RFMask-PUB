@@ -124,7 +124,7 @@ if __name__ == '__main__':
     args = parse_args()
     config = load_config(args.cfg)
     
-    logger = build_logger(config, args.mode, model_name='RFMask')
+    logger = build_logger(config, args.mode, model_name=config.model_name)
     logger.info(args)
     logger.info(f'Configuration:\n{pprint.pformat(config)}')
 

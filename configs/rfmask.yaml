@@ -1,26 +1,26 @@
 # dataset path
-TRAIN_DATA: &TRAIN_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_train.lmdb
+TRAIN_DATA: &TRAIN_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_val.lmdb
 VAL_DATA: &VAL_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_val.lmdb
-B_ROOT: &BOX_ROOT /share2/home/wuzhi/workspace/rfmask/rfbox6.lmdb
+
 # subset
 CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
 
 MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
-# experiment name or current model name
+# experiment name
 EXPER: &EXPER 'base'
 
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 200
+            BATCH_SIZE: &TRAIN_BATCH 180
             LEARNING_RATE: &LR 1.0e-4
     TRAINER:
-        MAX_EPOCHS: 180
+        MAX_EPOCHS: 200
         PRECISION: 32
-        GPUS: -1
+        DEVICES: -1
         ACCELERATOR: gpu
         STRATEGY: ddp # ddp_find_unused_parameters_false
         SYNC_BATCHNORM: true
@@ -30,19 +30,17 @@ TRAIN:
         NAME: *DATASET_NAME
         DATASET:
             ROOT: *TRAIN_DATA
-            # B_ROOT: *BOX_ROOT
             MODE: train
             CATEGORIES: *CATEGORIES
             VIEWS: &VIEWS [6]
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: true
-            NUM_WORKERS: &TRAIN_NUM_WORKERS 8
+            NUM_WORKERS: &TRAIN_NUM_WORKERS 4
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
             ROOT: *VAL_DATA
-            # B_ROOT: *BOX_ROOT
             MODE: val
             CATEGORIES: *CATEGORIES
             VIEWS: *VIEWS
@@ -50,7 +48,7 @@ TRAIN:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
             NUM_WORKERS: *TRAIN_NUM_WORKERS
-    CKPT_PATH:
+    CKPT_PATH: checkpoints/base/version_0/checkpoints/epoch=127-step=3712.ckpt
     LOGGER:
         NAME: *EXPER
 
@@ -65,7 +63,6 @@ EVAL:
         NAME: *DATASET_NAME
         DATASET:
             ROOT: *VAL_DATA
-            # B_ROOT: *BOX_ROOT
             MODE: val
             CATEGORIES: *CATEGORIES
             VIEWS: *VIEWS

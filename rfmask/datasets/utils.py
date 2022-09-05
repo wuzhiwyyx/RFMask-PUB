@@ -8,7 +8,8 @@
 
 from torch.utils.data import DataLoader
 
-from .hiber_dataset import HIBERDataset, HiberTrans, hiber_collate
+from .hiber import HIBERDataset, HiberTrans, hiber_collate
+from .hiber_mask import HIBERMaskDataset, HIBERMaskTrans
 from .rf_dataset import RFDataset, RFTrans, rf_collate
 
 def load_rf_dataset(config):
@@ -25,8 +26,29 @@ def load_rf_dataset(config):
     return dataset, loader
 
 def load_hiber_dataset(config):
+    """Load HIBER dataset from LMDB file
+
+    Args:
+        config (dict): Dict object containing dataset initial parameters and dataloader initial parameters.
+
+    Returns:
+        (Dataset, DataLoader): _description_
+    """
     dataset = HIBERDataset(**config.dataset, transform=HiberTrans())
     loader = DataLoader(dataset, **config.loader, drop_last=True, collate_fn=hiber_collate)
+    return dataset, loader
+
+def load_hiber_mask_dataset(config):
+    """Load HIBER mask dataset from LMDB file
+
+    Args:
+        config (dict): Dict object containing dataset initial parameters and dataloader initial parameters.
+
+    Returns:
+        (Dataset, DataLoader): _description_
+    """
+    dataset = HIBERMaskDataset(**config.dataset, transform=HIBERMaskTrans())
+    loader = DataLoader(dataset, **config.loader, drop_last=True)
     return dataset, loader
 
 

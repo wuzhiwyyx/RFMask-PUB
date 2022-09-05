@@ -22,19 +22,23 @@ from .utils import _onnx_paste_masks_in_image_loop
 class RFMask(nn.Module):
     """RFMask model definition."""
 
-    def __init__(self, num_classes=2):
+    def __init__(self, dual=True, fuse='multi-head'):
         """RFMask model constructor.
 
         Args:
             num_classes (int, optional): Number of categories to classifiy. Defaults to 2.
+            dual (bool, optional): Dual-branch version of RFMask or single-branch version of RFMask.
+            fuse (str, optional): Choose feature fuse method in dual-branch version of RFMask, 
+                                        fuse with proposed multi-head attention or simple concatenation.
         """
         nn.Module.__init__(self)
         # Horizontal and vertical branches have the same structure.
         self.hbranch = Branch(Encoder())
-        self.vbranch = Branch(Encoder())
-        self.num_classes = num_classes
+        self.vbranch = Branch(Encoder()) if dual else None
+        self.num_classes = 2
+        self.dual = dual
         self.mask_size = (624, 820)
-        self.roi_heads = RFRoIHeads(self.hbranch.out_channels, num_classes, (624, 820))
+        self.roi_heads = RFRoIHeads(self.hbranch.out_channels, dual=dual, fuse=fuse)
 
     def prepare_targets(self, targets, key='hboxes'):
         """Reorganize label structure.
@@ -120,14 +124,20 @@ class RFMask(nn.Module):
         # We use the off-the-shelf RPN model implemented by torchvision official code
         # which could be found in torchvision.models.detection.rpn.
         # RPN in torchvision automatically loads 'boxes' key in label dict as ground-truth.
+
         targets = self.prepare_targets(targets, 'hboxes')
         h_features, h_proposals, h_prop_losses, hor, h_target = self.hbranch(hor, targets)
-        targets = self.prepare_targets(targets, 'vboxes')
-        v_features, v_proposals, v_prop_losses, ver, v_target = self.vbranch(ver, targets)
-        
         # Pack rpn outputs into tuples and feed them into roi_heads
         h_bundle = (h_features, h_proposals, hor.image_sizes)
-        v_bundle = (v_features, v_proposals, ver.image_sizes)
+
+        if self.dual:
+            targets = self.prepare_targets(targets, 'vboxes')
+            v_features, v_proposals, v_prop_losses, ver, v_target = self.vbranch(ver, targets)
+            # Pack rpn outputs into tuples and feed them into roi_heads
+            v_bundle = (v_features, v_proposals, ver.image_sizes)
+        else:
+            v_bundle = None
+
         result, losses = self.roi_heads(h_bundle, v_bundle, params, targets)
 
         # If targets is passed then loss value will be returned, else losses is None.
@@ -135,8 +145,9 @@ class RFMask(nn.Module):
             rpn_loss = {}
             rpn_loss['loss_h_obj'] = h_prop_losses['loss_objectness']
             rpn_loss['loss_h_rpn_box'] = h_prop_losses['loss_rpn_box_reg']
-            rpn_loss['loss_v_obj'] = v_prop_losses['loss_objectness']
-            rpn_loss['loss_v_rpn_box'] = v_prop_losses['loss_rpn_box_reg']
+            if self.dual:
+                rpn_loss['loss_v_obj'] = v_prop_losses['loss_objectness']
+                rpn_loss['loss_v_rpn_box'] = v_prop_losses['loss_rpn_box_reg']
             losses.update(rpn_loss)
             return result, losses
         else:

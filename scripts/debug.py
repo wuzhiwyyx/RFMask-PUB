@@ -7,12 +7,12 @@ from utils import load_config, build_model, load_dataset, ConfigDict
 
 import torch
 from tqdm import tqdm
-torch.cuda.set_device(0)
+# torch.cuda.set_device(0)
 
-torch.backends.cudnn.benchmark = False
+# torch.backends.cudnn.benchmark = False
 
-config = load_config('configs/config.yaml')
-trainset, train_loader = load_dataset(config.train.trainset)
+config = load_config('configs/rfpose2dmask.yaml')
+# trainset, train_loader = load_dataset(config.train.trainset)
 
 hiber = {
     'name':'hiber', 
@@ -20,23 +20,28 @@ hiber = {
         'root': 'data/hiber_train.lmdb',
         'mode': 'train',
         'categories': ['WALK', 'MULTI', 'ACTION'],
+        'complex': True
     }, 
     'loader': {'batch_size': 4, 'shuffle': False, 'num_workers': 0}
 }
 hiber = ConfigDict(hiber)
-hiberset, hiber_loader = load_dataset(hiber)
-# _h = hiberset[0]
+hiberset, hiber_loader = load_dataset(config.train.trainset)
+# # _h = hiberset[0]
 
-# _r = trainset[0]
+# # _r = trainset[0]
 
 
-data_iter = iter(train_loader)
-data_item = next(data_iter)
+# data_iter = iter(train_loader)
+# data_item = next(data_iter)
 
 h_iter = iter(hiber_loader)
 h_item = next(h_iter)
 
 model = build_model(config.train.model).cuda()
+
+h_item = [x.cuda() for x in h_item]
+
+model = model(*h_item[:])
 
 for i, h_item in enumerate(tqdm(hiber_loader)):
     data = []
@@ -53,8 +58,8 @@ for i, h_item in enumerate(tqdm(hiber_loader)):
     # torch.cuda.empty_cache()
     _ = model(*data[:])
     
-print(f'output {len(_)}')
-print(config)
+# print(f'output {len(_)}')
+# print(config)
 
 
 # dataset = RFDataset('/share2/home/wuzhi/USTCData/', transform=RFTrans())
@@ -68,3 +73,29 @@ print(config)
 # data_iter = iter(train_loader)
 # data_item = next(data_iter)
 # data_item
+
+# from pathlib import Path
+# import matplotlib.pyplot as plt
+# import numpy as np
+
+# prefix = Path('/share/data/HIBER/')
+
+# file_path = Path('HIBER_TRAIN/WALK/HORIZONTAL_HEATMAPS/02_01/0000.npy')
+# o_path = prefix / file_path
+# n_path = prefix / 'COMPLEX' / file_path.with_stem('0006')
+
+# old = np.load(o_path)
+# new = np.load(n_path)
+
+# new = new.view(dtype=np.complex128).squeeze(-1)
+
+# plt.imshow(old[:, :, 0])
+# plt.savefig('test1.jpg')
+# plt.close()
+# plt.imshow(np.abs(new[0]))
+# plt.savefig('test2.jpg')
+# plt.close()
+
+# o = old[:, :, 0]
+# n = np.abs(new[1])
+# o

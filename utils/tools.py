@@ -6,8 +6,8 @@
  # @ Description: Collection of some useful functions for running the whole project.
  '''
 
-from rfmask import RFMask
-from rfmask.datasets import load_hiber_dataset, load_rf_dataset
+from rfmask import RFMask, RFPose2DMask
+from rfmask.datasets import load_hiber_dataset, load_rf_dataset, load_hiber_mask_dataset
 
 def build_model(cfg):
     """Build model object
@@ -19,7 +19,8 @@ def build_model(cfg):
         LightningModule: Pytorch-lightning modules.
     """
     models = {
-        'RFMask' : RFMask
+        'RFMask' : RFMask,
+        'RFPose2DMask' : RFPose2DMask
     }
     return models[cfg.name](**cfg.args)
     
@@ -27,6 +28,7 @@ def load_dataset(config):
     _ = {
         'hiber' : load_hiber_dataset,
         'rf' : load_rf_dataset,
+        'hiber_mask' : load_hiber_mask_dataset
     }
     return _[config.name](config)
 

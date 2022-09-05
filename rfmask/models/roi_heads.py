@@ -19,13 +19,12 @@ class RFRoIHeads(RoIHeads):
        RFRoIHeads is inherited from RoIHeads implemented by torchvision. Original codes can
        be found in torchvision.models.detection.roi_heads
     """
-    def __init__(self, out_channels=256, num_classes=2, mask_size=(624, 820)):
+    def __init__(self, out_channels=256, dual=True, fuse='multi-head'):
         """RFRoIHeads constructor.
 
         Args:
             out_channels (int, optional): Feature channels outputed by Branch. Defaults to 256.
-            num_classes (int, optional): Number of categories to classifiy. Defaults to 2.
-            mask_size (tuple, optional): Output resolution which is not being used. Defaults to (624, 820).
+            fuse (str, optional): Feature fusion method, candicate method are ['multi-head0, 'cat'']. Defaults to multi-head fusion.
         """
         # Box regression parameters
         box_fg_iou_thresh, box_bg_iou_thresh = 0.5, 0.5
@@ -38,7 +37,7 @@ class RFRoIHeads(RoIHeads):
             featmap_names=['0'], output_size=14, sampling_ratio=2)
         box_head = TwoMLPHead(
             out_channels * box_roi_pool.output_size[0] ** 2, 1024)
-        self.num_cls = num_classes
+        self.num_cls = 2
         box_predictor = FastRCNNPredictor(1024, self.num_cls)
         super(RFRoIHeads, self).__init__(
             box_roi_pool, box_head, box_predictor,
@@ -59,9 +58,22 @@ class RFRoIHeads(RoIHeads):
         )
         self.mask_roi_pool = MultiScaleRoIAlign(
                 featmap_names=['0'], output_size=14, sampling_ratio=2)
-        self.mask_head = MaskRCNNHeads(1, (64,), 1)
-        self.mask_predictor = RFMaskRCNNPredictor(64, 32, num_classes)
-        self.mask_size = mask_size
+
+        # initialize fuse method
+        assert fuse in ['multi-head', 'cat'], f'candidate fusion methods are ["multi-head", "cat"], but got {fuse}.'
+        head_in_feature = 1 if dual else 64
+        if dual and fuse == 'multi-head':
+            head_in_feature = 1
+            self.fuse = self.multi_head_fusion
+        elif dual and fuse == 'cat':
+            head_in_feature = 128
+            self.fuse = self.concatenate_fusion
+        else:
+            head_in_feature = 64
+
+        self.mask_head = MaskRCNNHeads(head_in_feature, (64,), 1)
+        self.mask_predictor = RFMaskRCNNPredictor(64, 32, self.num_cls)
+        self.mask_size = (624, 820)
 
         self.trans = self.trans_enc(d_model=64*14, num_layers=3)
         self.multi_head = nn.MultiheadAttention(64*14, 8)
@@ -147,7 +159,7 @@ class RFRoIHeads(RoIHeads):
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
         return proposals, matched_idxs, labels, regression_targets, sampled_inds
 
-    def feature_fusion(self, h_feats, v_feats, pool_size=14):
+    def concatenate_fusion(self, h_feats, v_feats, pool_size=14):
         """Fuse feature by MLP.
 
         Args:
@@ -155,7 +167,8 @@ class RFRoIHeads(RoIHeads):
             v_feats (tensor): Vertical roi features.
             pool_size (int, optional): Pooled shape. Defaults to 14.
         """
-
+        feats =  torch.cat([h_feats, v_feats], axis=-3)
+        return feats
         b, c = h_feats.size()[:2]
         feats = torch.stack([h_feats, v_feats], dim=-3)
         feats = feats.view(-1, *feats.size()[-3:])
@@ -163,7 +176,7 @@ class RFRoIHeads(RoIHeads):
         feats = feats.view(b, c, pool_size, pool_size)
         return feats
     
-    def trans_feature_fusion(self, h_feats, v_feats, pool_size=14):
+    def multi_head_fusion(self, h_feats, v_feats, pool_size=14):
         """Multi-Head fusion module.
 
         Args:
@@ -254,16 +267,19 @@ class RFRoIHeads(RoIHeads):
             result (list[dict]): Containing predicted results. list of {'boxes':boxes, 'labels':labels, 'scores':scores}.
             losses (dict): Losses.
         """
+        dual = not v_bundle is None
 
         # Unpack branch outputs.
         h_feats, h_props, h_img_sizes = h_bundle
-        v_feats, v_props, v_img_sizes = v_bundle
+        if dual:
+            v_feats, v_props, v_img_sizes = v_bundle
         
         # Perform backbone on each horizontal/vertical input data, respectively.
         h_ = self.box_reg(h_bundle, targets, key='hboxes')
         result, losses, h_props, matched_idxs, labels = h_
-        v_ = self.box_reg(v_bundle, targets, key='vboxes')
-        v_losses = v_[1]
+        if dual:
+            v_ = self.box_reg(v_bundle, targets, key='vboxes')
+            v_losses = v_[1]
 
         # Prepare positive boxes
         h_preds = [p["boxes"] for p in result]
@@ -288,11 +304,14 @@ class RFRoIHeads(RoIHeads):
             res['boxes'] = m_props[i]
             
         # Crop roi features
-        hm_feats = self.mask_roi_pool(h_feats, h_preds, h_img_sizes)
-        vm_feats = self.mask_roi_pool(v_feats, v_preds, v_img_sizes)
+        hm_feats = self.mask_roi_pool(h_feats, h_preds, h_img_sizes) # (N, 64, 14, 14)
+        if dual:
+            vm_feats = self.mask_roi_pool(v_feats, v_preds, v_img_sizes) # (N, 64, 14, 14)
 
-        # Fuse feature by our proposed Multi-Head Fusion module
-        mask_features = self.trans_feature_fusion(hm_feats, vm_feats)
+            # Fuse feature by our proposed Multi-Head Fusion module
+            mask_features = self.fuse(hm_feats, vm_feats)
+        else:
+            mask_features = hm_feats
 
         # Generate silhouette results.
         mask_features = self.mask_head(mask_features)
@@ -318,6 +337,7 @@ class RFRoIHeads(RoIHeads):
             masks_probs = maskrcnn_inference(mask_logits, labels)
             for mask_prob, r in zip(masks_probs, result):
                 r["masks"] = mask_prob
-        losses.update(v_losses)
+        if dual:
+            losses.update(v_losses)
         losses.update(loss_mask)
         return result, losses
