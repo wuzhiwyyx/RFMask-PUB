@@ -15,7 +15,7 @@ TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 180
+            BATCH_SIZE: &TRAIN_BATCH 2
             LEARNING_RATE: &LR 1.0e-4
     TRAINER:
         MAX_EPOCHS: 200
@@ -48,7 +48,7 @@ TRAIN:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
             NUM_WORKERS: *TRAIN_NUM_WORKERS
-    CKPT_PATH: checkpoints/base/version_0/checkpoints/epoch=127-step=3712.ckpt
+    CKPT_PATH: /share2/home/wuzhi/workspace/rfmask/ours/trans_wma/lightning_logs/version_0/checkpoints/epoch=199-step=50599.ckpt
     LOGGER:
         NAME: *EXPER
 

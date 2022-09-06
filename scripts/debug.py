@@ -11,21 +11,21 @@ from tqdm import tqdm
 
 # torch.backends.cudnn.benchmark = False
 
-config = load_config('configs/rfpose2dmask.yaml')
+config = load_config('configs/rfmask.yaml')
 # trainset, train_loader = load_dataset(config.train.trainset)
 
-hiber = {
-    'name':'hiber', 
-    'dataset':{
-        'root': 'data/hiber_train.lmdb',
-        'mode': 'train',
-        'categories': ['WALK', 'MULTI', 'ACTION'],
-        'complex': True
-    }, 
-    'loader': {'batch_size': 4, 'shuffle': False, 'num_workers': 0}
-}
-hiber = ConfigDict(hiber)
-hiberset, hiber_loader = load_dataset(config.train.trainset)
+# hiber = {
+#     'name':'hiber', 
+#     'dataset':{
+#         'root': 'data/hiber_train.lmdb',
+#         'mode': 'train',
+#         'categories': ['WALK', 'MULTI', 'ACTION'],
+#         'complex': True
+#     }, 
+#     'loader': {'batch_size': 4, 'shuffle': False, 'num_workers': 0}
+# }
+# hiber = ConfigDict(hiber)
+hiberset, hiber_loader = load_dataset(config.train.valset)
 # # _h = hiberset[0]
 
 # # _r = trainset[0]
@@ -37,26 +37,26 @@ hiberset, hiber_loader = load_dataset(config.train.trainset)
 h_iter = iter(hiber_loader)
 h_item = next(h_iter)
 
-model = build_model(config.train.model).cuda()
+model = build_model(config.train.model)
+# h_item = [x.cuda() for x in h_item]
 
-h_item = [x.cuda() for x in h_item]
+model = model(*h_item[:3])
+model
 
-model = model(*h_item[:])
-
-for i, h_item in enumerate(tqdm(hiber_loader)):
-    data = []
-    data.append(h_item[0].cuda())
-    data.append(h_item[1].cuda())
-    data.append(h_item[2].cuda())
-    data.append([])
-    for x in h_item[3]:
-        for k in x.keys():
-            x[k] = x[k].cuda()
-        data[3].append(x)
-    assert not 0 in [x['masks'].shape[0] for x in data[3]]
+# for i, h_item in enumerate(tqdm(hiber_loader)):
+#     data = []
+#     data.append(h_item[0].cuda())
+#     data.append(h_item[1].cuda())
+#     data.append(h_item[2].cuda())
+#     data.append([])
+#     for x in h_item[3]:
+#         for k in x.keys():
+#             x[k] = x[k].cuda()
+#         data[3].append(x)
+#     assert not 0 in [x['masks'].shape[0] for x in data[3]]
     
-    # torch.cuda.empty_cache()
-    _ = model(*data[:])
+#     # torch.cuda.empty_cache()
+#     _ = model(*data[:])
     
 # print(f'output {len(_)}')
 # print(config)

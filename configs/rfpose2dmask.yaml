@@ -15,8 +15,8 @@ TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 150
-            LEARNING_RATE: &LR 1.0e-4
+            BATCH_SIZE: &TRAIN_BATCH 120
+            LEARNING_RATE: &LR 1.0e-3
     TRAINER:
         MAX_EPOCHS: 200
         PRECISION: 32
@@ -36,7 +36,7 @@ TRAIN:
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: true
-            NUM_WORKERS: &TRAIN_NUM_WORKERS 4
+            NUM_WORKERS: &TRAIN_NUM_WORKERS 8
     VALSET:
         NAME: *DATASET_NAME
         DATASET:

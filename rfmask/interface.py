@@ -126,8 +126,8 @@ class RFPose2DMask(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
-#         scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
-        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=40)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
+        # scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=40)
         lr_dict = {
             'optimizer': optimizer,
             'lr_scheduler': {
