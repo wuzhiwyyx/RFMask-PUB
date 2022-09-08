@@ -20,6 +20,7 @@ def build_model(cfg):
     """
     models = {
         'RFMask' : RFMask,
+        'RFMask_single': RFMask,
         'RFPose2DMask' : RFPose2DMask
     }
     return models[cfg.name](**cfg.args)

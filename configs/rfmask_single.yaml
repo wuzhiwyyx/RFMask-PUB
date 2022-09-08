@@ -16,7 +16,7 @@ TRAIN:
         NAME: *MODEL_NAME
         ARGS:
             BATCH_SIZE: &TRAIN_BATCH 180
-            LEARNING_RATE: &LR 1.0e-4
+            LEARNING_RATE: &LR 1.0e-3
             DUAL: false
             FUSE: multi-head
     TRAINER:
@@ -57,7 +57,7 @@ TRAIN:
 EVAL:
     MODEL:
         NAME: *MODEL_NAME
-        CFG:
+        ARGS:
             BATCH_SIZE: &VAL_BATCH 1
             LEARNING_RATE: *LR
     CKPT_PATH: /share2/home/wuzhi/workspace/RFTrack/checkpoints/abs_coor/version_1/checkpoints/epoch=199-step=19399.ckpt
@@ -75,7 +75,7 @@ EVAL:
     TRAINER:
         MAX_EPOCHS: 1
         ENABLE_CHECKPOINTING: false
-        GPUS: [0]
+        DEVICES: [0]
         ACCELERATOR: gpu
         LOGGER: false
     EXPER: *EXPER

@@ -141,3 +141,6 @@ RFMask_trans_wma.py
 MITNet12.py
 *.txt
 test*
+*.pkl
+RFMask_pred.py
+results/

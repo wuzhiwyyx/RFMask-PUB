@@ -131,7 +131,7 @@ class HIBERMaskTrans():
         # h, w = 154, 218
         silhouettes = silhouettes.transpose((1, 2, 0))
         silhouettes = np.ascontiguousarray(silhouettes).astype(int)
-        silhouettes = cv2.resize(silhouettes, (218, 154), None, None, interpolation=cv2.INTER_NEAREST)
+        # silhouettes = cv2.resize(silhouettes, (218, 154), None, None, interpolation=cv2.INTER_NEAREST)
         # silhouettes[silhouettes < 0.5] = 0
         # silhouettes[silhouettes >= 0.5] = 1
         hors = torch.from_numpy(self.norm(hors))

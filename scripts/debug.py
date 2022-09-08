@@ -37,26 +37,26 @@ hiberset, hiber_loader = load_dataset(config.train.valset)
 h_iter = iter(hiber_loader)
 h_item = next(h_iter)
 
-model = build_model(config.train.model)
+model = build_model(config.train.model).cuda()
 # h_item = [x.cuda() for x in h_item]
 
-model = model(*h_item[:3])
-model
+# model = model(*h_item[:])
+# model
 
-# for i, h_item in enumerate(tqdm(hiber_loader)):
-#     data = []
-#     data.append(h_item[0].cuda())
-#     data.append(h_item[1].cuda())
-#     data.append(h_item[2].cuda())
-#     data.append([])
-#     for x in h_item[3]:
-#         for k in x.keys():
-#             x[k] = x[k].cuda()
-#         data[3].append(x)
-#     assert not 0 in [x['masks'].shape[0] for x in data[3]]
+for i, h_item in enumerate(tqdm(hiber_loader)):
+    data = []
+    data.append(h_item[0].cuda())
+    data.append(h_item[1].cuda())
+    data.append(h_item[2].cuda())
+    data.append([])
+    for x in h_item[3]:
+        for k in x.keys():
+            x[k] = x[k].cuda()
+        data[3].append(x)
+    assert not 0 in [x['masks'].shape[0] for x in data[3]]
     
-#     # torch.cuda.empty_cache()
-#     _ = model(*data[:])
+    # torch.cuda.empty_cache()
+    _ = model(*data[:])
     
 # print(f'output {len(_)}')
 # print(config)

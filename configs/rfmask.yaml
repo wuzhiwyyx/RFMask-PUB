@@ -1,22 +1,22 @@
 # dataset path
-TRAIN_DATA: &TRAIN_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_val.lmdb
+TRAIN_DATA: &TRAIN_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_train.lmdb
 VAL_DATA: &VAL_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_val.lmdb
 
 # subset
-CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
+CATEGORIES: &CATEGORIES ['MULTI']
 
 MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name
-EXPER: &EXPER 'base'
+EXPER: &EXPER 'rfmask'
 
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 2
-            LEARNING_RATE: &LR 1.0e-4
+            BATCH_SIZE: &TRAIN_BATCH 120
+            LEARNING_RATE: &LR 1.0e-3
     TRAINER:
         MAX_EPOCHS: 200
         PRECISION: 32
@@ -26,6 +26,7 @@ TRAIN:
         SYNC_BATCHNORM: true
         RELOAD_DATALOADERS_EVERY_N_EPOCHS: 10
         LOG_EVERY_N_STEPS: 15
+        PROFILER: pytorch
     TRAINSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -36,7 +37,7 @@ TRAIN:
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: true
-            NUM_WORKERS: &TRAIN_NUM_WORKERS 4
+            NUM_WORKERS: &TRAIN_NUM_WORKERS 8
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -48,17 +49,17 @@ TRAIN:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
             NUM_WORKERS: *TRAIN_NUM_WORKERS
-    CKPT_PATH: /share2/home/wuzhi/workspace/rfmask/ours/trans_wma/lightning_logs/version_0/checkpoints/epoch=199-step=50599.ckpt
+    CKPT_PATH: 
     LOGGER:
         NAME: *EXPER
 
 EVAL:
     MODEL:
         NAME: *MODEL_NAME
-        CFG:
+        ARGS:
             BATCH_SIZE: &VAL_BATCH 1
             LEARNING_RATE: *LR
-    CKPT_PATH: /share2/home/wuzhi/workspace/RFTrack/checkpoints/abs_coor/version_1/checkpoints/epoch=199-step=19399.ckpt
+    CKPT_PATH: checkpoints/base/version_1/checkpoints/epoch=199-step=6016.ckpt
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -73,7 +74,7 @@ EVAL:
     TRAINER:
         MAX_EPOCHS: 1
         ENABLE_CHECKPOINTING: false
-        GPUS: [0]
+        DEVICES: [0]
         ACCELERATOR: gpu
         LOGGER: false
     EXPER: *EXPER

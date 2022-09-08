@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import torchvision
 from torch import Tensor
 from torchvision.models.detection.roi_heads import expand_masks, expand_boxes
+from torchvision.transforms import Resize
+from torchvision.transforms import InterpolationMode
 
 from torch.jit.annotations import Optional, List, Dict, Tuple
 
@@ -41,5 +43,6 @@ class RFPose2DMask(nn.Module):
         output = output.squeeze(1)
         loss = None
         if not mask is None:
+            mask = Resize(output.shape[-2:], interpolation=InterpolationMode.NEAREST)(mask)
             loss = self.loss(output, mask)
         return output, loss

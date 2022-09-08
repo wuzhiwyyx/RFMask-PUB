@@ -11,6 +11,7 @@ import torch
 import torch.nn.functional as F
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.ops.boxes import box_area
+from torchvision.ops import boxes as box_ops, roi_align
 
 from ..datasets import camera_parameter
 
@@ -138,7 +139,7 @@ def project_3d_to_pixel(points, M, P, D, K):
     u = xpp * kfx + kcx
     v = ypp * kfy + kcy
     pts = torch.stack([u, v], dim=0).t()
-    pts = pts / 2
+    # pts = pts / 2
     return pts
 
 def calc_v_props(h_proposals, params, project=True, pad=25):
@@ -203,3 +204,47 @@ def calc_v_props(h_proposals, params, project=True, pad=25):
         proposals.append(coor2d)
 
     return v_props, proposals
+
+
+def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
+    """
+    Given segmentation masks and the bounding boxes corresponding
+    to the location of the masks in the image, this function
+    crops and resizes the masks in the position defined by the
+    boxes. This prepares the masks for them to be fed to the
+    loss computation as the targets.
+    """
+    matched_idxs = matched_idxs.to(boxes)
+    rois = torch.cat([matched_idxs[:, None], boxes], dim=1)
+    gt_masks = gt_masks[:, None].to(rois)
+    return roi_align(gt_masks, rois, (M, M), 1.0)[:, 0]
+
+def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
+    """
+    Args:
+        proposals (list[BoxList])
+        mask_logits (Tensor)
+        targets (list[BoxList])
+
+    Return:
+        mask_loss (Tensor): scalar tensor containing the loss
+    """
+
+    discretization_size = mask_logits.shape[-1]
+    labels = [gt_label[idxs] for gt_label, idxs in zip(gt_labels, mask_matched_idxs)]
+    mask_targets = [
+        project_masks_on_boxes(m, p, i, discretization_size) for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)
+    ]
+
+    labels = torch.cat(labels, dim=0)
+    mask_targets = torch.cat(mask_targets, dim=0)
+
+    # torch.mean (in binary_cross_entropy_with_logits) doesn't
+    # accept empty tensors, so handle it separately
+    if mask_targets.numel() == 0:
+        return mask_logits.sum() * 0
+
+    mask_loss = F.binary_cross_entropy_with_logits(
+        mask_logits[torch.arange(labels.shape[0], device=labels.device), labels], mask_targets
+    )
+    return mask_loss

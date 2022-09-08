@@ -5,11 +5,12 @@ from torchvision.models.detection.roi_heads import RoIHeads, fastrcnn_loss
 from torchvision.ops import MultiScaleRoIAlign
 from torchvision.models.detection.faster_rcnn import TwoMLPHead, FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNHeads
-from torchvision.models.detection.roi_heads import maskrcnn_loss, maskrcnn_inference
+# from torchvision.models.detection.roi_heads import maskrcnn_loss, maskrcnn_inference
+from torchvision.models.detection.roi_heads import maskrcnn_inference
 from torch.jit.annotations import Optional, List, Dict, Tuple
 
 from .predictor import RFMaskRCNNPredictor
-from .utils import calc_v_props
+from .utils import calc_v_props, maskrcnn_loss
 
 class RFRoIHeads(RoIHeads):
     """RFRoIHeads is the core part of RFMask, it is responsible for regressing 2D detection

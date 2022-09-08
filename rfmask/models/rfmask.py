@@ -63,7 +63,7 @@ class RFMask(nn.Module):
         h = int(box[3] - box[1] + TO_REMOVE)
         #w = max(w, 1)
         #h = max(h, 1)
-        if w > 2 * im_w or h > 2 * im_h:
+        if w > 1 * im_w or h > 1 * im_h:
             return torch.zeros((im_h, im_w), dtype=mask.dtype, device=mask.device)
         
         w = max(w, 1) if w < im_w else im_w

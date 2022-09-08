@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument('--cfg', default='configs/config.yaml', help='config file path')
     parser.add_argument('--mode', default='train', choices=['train', 'eval'], help='train or evaluate')
     parser.add_argument('--save_vis', action='store_true', help='save_visualized_result')
+    parser.add_argument('--threshold', type=int, default=0.2, help='threshold of prediction')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--save_pred", action='store_true', help='save prediction results into prediction.pkl')
@@ -99,24 +100,25 @@ def eval(config, args, logger):
         logger.info(f'Prediction results saved in {pred_file}.')
 
     logger.info('Post processing.')
-    processed = postprocess(prediction)
+    processed = postprocess(config.model.name, prediction, args.threshold)
 
     logger.info('Calculating average iou.')
-    ious, avg_iou = calc_avg_iou(dataset, processed)
+    ious, avg_iou = calc_avg_iou(config.model.name, dataset, processed)
     logger.info('Average iou is %4f' % avg_iou)
     
     if args.save_vis:
         logger.info('Visualizing dataset.')
-        frames = visualize(dataset, processed)
+        frames = visualize(config.model.name, dataset, processed)
 
         # visualized result file
-        current_time = time.strftime("%Y-%m-%d-%H-%M-%S")
+        current_time = time.strftime("%Y-%m-%d-%H-%M")
         vis_file = f'{config.exper}_{avg_iou:.3f}_{current_time}.mp4'
         out = Path('results') / vis_file
         out.parent.mkdir(parents=True, exist_ok=True)
 
+        logger.info(f'Saving visualized results.')
+        generate_video(out, frames, ious)
         logger.info(f'Visualized results are saved in {out}.')
-        generate_video(out / vis_file, frames, ious)
     logger.info('Evaluation finished.')
 
 

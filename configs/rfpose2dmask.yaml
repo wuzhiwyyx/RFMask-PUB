@@ -55,10 +55,10 @@ TRAIN:
 EVAL:
     MODEL:
         NAME: *MODEL_NAME
-        CFG:
+        ARGS:
             BATCH_SIZE: &VAL_BATCH 1
             LEARNING_RATE: *LR
-    CKPT_PATH: /share2/home/wuzhi/workspace/RFTrack/checkpoints/abs_coor/version_1/checkpoints/epoch=199-step=19399.ckpt
+    CKPT_PATH: checkpoints/rfpose2dmask/version_0/checkpoints/epoch=199-step=9600.ckpt
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -73,7 +73,7 @@ EVAL:
     TRAINER:
         MAX_EPOCHS: 1
         ENABLE_CHECKPOINTING: false
-        GPUS: [0]
+        DEVICES: [0]
         ACCELERATOR: gpu
         LOGGER: false
     EXPER: *EXPER

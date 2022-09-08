@@ -79,8 +79,8 @@ class RFMask(pl.LightningModule):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
         # optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
         # optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, weight_decay=0.01)
-        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 36, gamma = 0.1)
-        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
+        # scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20)
         lr_dict = {
             'optimizer': optimizer,
             'lr_scheduler': {
