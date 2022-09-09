@@ -53,9 +53,7 @@ class RFMask(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop.
         result, losses = self.model(*batch)
-        loss = 0
-        for k in self.loss_keys:
-            loss += losses[k]
+        loss = sum(losses.values())
             
         # Logging to TensorBoard by default
         self.log('loss', loss, batch_size=self.batch_size, sync_dist=True)
@@ -66,9 +64,8 @@ class RFMask(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         result, losses = self.model(*batch)
-        loss = 0
-        for k in self.loss_keys:
-            loss += losses[k]
+        loss = sum(losses.values())
+
         self.log('val_loss', loss, batch_size=self.batch_size, sync_dist=True)
         self.log('val_mask', losses['loss_mask'], batch_size=self.batch_size, sync_dist=True)
         for k in self.loss_keys:
@@ -79,8 +76,8 @@ class RFMask(pl.LightningModule):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
         # optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
         # optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, weight_decay=0.01)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
-        # scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20)
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20)
         lr_dict = {
             'optimizer': optimizer,
             'lr_scheduler': {

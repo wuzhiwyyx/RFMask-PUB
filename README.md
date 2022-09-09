@@ -16,6 +16,24 @@ conda env create -f environment.yaml
 pip install -r requirements.txt
 ```
 
+## Results
+- Quantitative results
+
+  Model|WALK|MULTI|ACTION|config|weights
+  :--:|:--:|:--:|:--:|:--:|:--:
+  RFPose2dMask ( seq4 )| |  | | [rfpose2dmask.yaml](configs/)|
+  RFPose2dMask ( seq12 )| | | | |
+  RFPose2dMask ( seq32 )| | | | |
+  RFMask ( res9 )| | | | |
+  RFMask ( res34 )| | | | |
+  RFMask ( res50 )| | | | |
+  RFMask_single ( res34 ) | | | | |
+  RFMask w/o MHF ( res34 )| | | | |
+
+- Qualitative results
+  ![qualitative results](assets/images/qualitati_results.jpg)
+
+
 ## Usage
 
 
