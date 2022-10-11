@@ -144,3 +144,4 @@ test*
 *.pkl
 RFMask_pred.py
 results/
+old_code
