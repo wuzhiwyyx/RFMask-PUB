@@ -120,6 +120,7 @@ def project_3d_to_pixel(points, M, P, D, K):
     Returns:
         pts (tensor): Projected 2D points in result image plane.
     """
+
     pts = torch.ones((1, points.shape[0]), device=points.device)
     pts = torch.cat([points.t(), pts], dim=0)
     cc = torch.mm(M, pts)
@@ -139,7 +140,7 @@ def project_3d_to_pixel(points, M, P, D, K):
     u = xpp * kfx + kcx
     v = ypp * kfy + kcy
     pts = torch.stack([u, v], dim=0).t()
-    # pts = pts / 2
+    pts = pts / 2
     return pts
 
 def calc_v_props(h_proposals, params, project=True, pad=25):
@@ -248,3 +249,8 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
         mask_logits[torch.arange(labels.shape[0], device=labels.device), labels], mask_targets
     )
     return mask_loss
+
+def iou(mask1, mask2):
+    inter = torch.logical_and(mask1, mask2)
+    union = torch.logical_or(mask1, mask2)
+    return torch.sum(inter.flatten(1), dim=1) / torch.sum(union.flatten(1), dim=1)

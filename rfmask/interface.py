@@ -14,6 +14,7 @@ import pytorch_lightning as pl
 
 from .models import RFMask as RFMask_
 from .models import RFPose2DMask as RFPose2DMask_
+from .models import iou
 
 class RFMask(pl.LightningModule):
     """Pytorch-lightning interface of RFMask, 
@@ -21,11 +22,13 @@ class RFMask(pl.LightningModule):
 
     """
 
-    def __init__(self, learning_rate=1e-3, batch_size=12, dual=True, fuse='multi-head'):
+    def __init__(self, learning_rate=1e-3, batch_size=12, dual=True, 
+                    fuse='multi-head', threshold=0.2):
         super().__init__()
         self.learning_rate = learning_rate
         self.model = RFMask_(dual=dual, fuse=fuse)
         self.batch_size = batch_size
+        self.thresh = threshold
         self.num_workers = 0
         if dual:
             self.loss_keys = ['loss_classifier_h', 'loss_box_reg_h', 'loss_classifier_v',
@@ -38,6 +41,21 @@ class RFMask(pl.LightningModule):
     def forward(self, hor, ver, params, targets=None):
         result, losses = self.model(hor, ver, params, targets)
         return result, losses
+
+    def mask_iou(self, preds, targets):
+        results = []
+        for p in preds:
+            p = p['masks'].detach()
+            if p.shape[0] == 0:
+                p = torch.zeros((1, 1, 1248 // 2, 1640 // 2), device=p.device)
+            p = p.max(dim=0)[0].squeeze()
+            p[p < self.thresh] = 0
+            results.append(p)
+        gts = [x['masks'].max(dim=0)[0] for x in targets]
+        results = torch.stack(results)
+        gts = torch.stack(gts)
+        biou = iou(results, gts)
+        return biou
     
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         hor, ver, params, targets = batch
@@ -53,31 +71,46 @@ class RFMask(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop.
         result, losses = self.model(*batch)
-        loss = sum(losses.values())
-            
-        # Logging to TensorBoard by default
-        self.log('loss', loss, batch_size=self.batch_size, sync_dist=True)
-        self.log('mask', losses['loss_mask'], batch_size=self.batch_size, sync_dist=True)
+        loss = 0
         for k in self.loss_keys:
-            self.log('other/' + k, losses[k], batch_size=self.batch_size, sync_dist=True)
+            loss = loss + losses[k]
+        # loss = sum(losses.values())
+        # loss = losses['loss_mask'] + sum([float(losses[x]) for x in set(self.loss_keys) - set(['loss_mask'])])
+        
+        # batch_miou = self.mask_iou(result, batch[-1]).mean().item()
+
+        # Logging to TensorBoard by default
+        self.log('train/loss', loss.cpu().detach(), batch_size=self.batch_size, sync_dist=True)
+        self.log('train/mask_loss', losses['loss_mask'].cpu().detach(), batch_size=self.batch_size, sync_dist=True)
+        # self.log('train/iou', batch_miou, batch_size=self.batch_size, sync_dist=True)
+        for k in self.loss_keys:
+            self.log('train_other/' + k, losses[k].cpu().detach(), batch_size=self.batch_size, sync_dist=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
         result, losses = self.model(*batch)
-        loss = sum(losses.values())
-
-        self.log('val_loss', loss, batch_size=self.batch_size, sync_dist=True)
-        self.log('val_mask', losses['loss_mask'], batch_size=self.batch_size, sync_dist=True)
+        loss = 0
         for k in self.loss_keys:
-            self.log('val_other/' + k, losses[k], batch_size=self.batch_size, sync_dist=True)
+            loss = loss + losses[k]
+        # loss = sum(losses.values())
+        # loss = losses['loss_mask'] + sum([float(losses[x]) for x in set(self.loss_keys) - set(['loss_mask'])])
+
+        # batch_miou = self.mask_iou(result, batch[-1]).mean().item()
+        
+        self.log('val/loss', loss.cpu().detach(), batch_size=self.batch_size, sync_dist=True)
+        self.log('val/mask_loss', losses['loss_mask'].cpu().detach(), batch_size=self.batch_size, sync_dist=True)
+        # self.log('val/iou', batch_miou, batch_size=self.batch_size, sync_dist=True)
+        
+        for k in self.loss_keys:
+            self.log('val_other/' + k, losses[k].cpu().detach(), batch_size=self.batch_size, sync_dist=True)
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
-        # optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         # optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, weight_decay=0.01)
         # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
-        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20)
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=40)
         lr_dict = {
             'optimizer': optimizer,
             'lr_scheduler': {
@@ -123,8 +156,8 @@ class RFPose2DMask(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
-        # scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=40)
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size = 60, gamma = 0.5)
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20)
         lr_dict = {
             'optimizer': optimizer,
             'lr_scheduler': {

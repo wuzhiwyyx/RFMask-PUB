@@ -74,7 +74,7 @@ class RFRoIHeads(RoIHeads):
 
         self.mask_head = MaskRCNNHeads(head_in_feature, (64,), 1)
         self.mask_predictor = RFMaskRCNNPredictor(64, 32, self.num_cls)
-        self.mask_size = (624, 820)
+        # self.mask_size = (624, 820)
 
         self.trans = self.trans_enc(d_model=64*14, num_layers=3)
         self.multi_head = nn.MultiheadAttention(64*14, 8)
@@ -296,15 +296,36 @@ class RFRoIHeads(RoIHeads):
                 pos_matched_idxs.append(matched_idxs[img_id][pos])
         else:
             pos_matched_idxs = None
-            
+        
+        # import matplotlib.pyplot as plt
+        # from matplotlib.patches import Rectangle
+        # import numpy as np
+
         # Calculate vertical boxes according to horizontal boxes,
         # meanwhile undo offset and combine box-pairs into 3D bounding boxes.
         # Project 3D bounding boxes into result image plane
         v_preds, m_props = calc_v_props(h_preds, params)
+
+        # Deal with nan brought by float16
+        # for i in range(len(m_props)):
+        #     selected = m_props[i].sum(dim=1).isnan()
+        #     m_props[i][selected] = torch.tensor([0, 0, 10, 10], dtype=m_props[i].dtype, device=m_props[i].device)
+        #     selected = ~m_props[i].sum(dim=1).isnan()
+        #     if pos_matched_idxs[i].numel() != 0:
+        #         pos_matched_idxs[i] = pos_matched_idxs[i][selected]
+        #         m_props[i] = m_props[i][selected]
+        #         h_preds[i] = h_preds[i][selected]
+        #         v_preds[i] = v_preds[i][selected]
+        #         result[i]["labels"] = result[i]["labels"][selected]
+        #     else:
+        #         pos_matched_idxs[i]
+        #         m_props[i] = torch.zeros((0, 4), device=h_feats['0'].device)
+
         for i, res in enumerate(result):
             res['boxes'] = m_props[i]
             
         # Crop roi features
+
         hm_feats = self.mask_roi_pool(h_feats, h_preds, h_img_sizes) # (N, 64, 14, 14)
         if dual:
             vm_feats = self.mask_roi_pool(v_feats, v_preds, v_img_sizes) # (N, 64, 14, 14)
@@ -317,7 +338,7 @@ class RFRoIHeads(RoIHeads):
         # Generate silhouette results.
         mask_features = self.mask_head(mask_features)
         mask_logits = self.mask_predictor(mask_features)
-        
+
         loss_mask = {}
         if not targets is None:
             assert targets is not None
@@ -338,6 +359,7 @@ class RFRoIHeads(RoIHeads):
             masks_probs = maskrcnn_inference(mask_logits, labels)
             for mask_prob, r in zip(masks_probs, result):
                 r["masks"] = mask_prob
+
         if dual:
             losses.update(v_losses)
         losses.update(loss_mask)

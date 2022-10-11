@@ -16,7 +16,7 @@ import pprint
 
 from pathlib import Path
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import LearningRateMonitor
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from utils import build_model, load_dataset
 from utils import build_logger, load_config, postprocess
@@ -43,6 +43,9 @@ def train(config, args, logger):
     logger.info('Building model.')
     model = build_model(config.model)
     lr_monitor = LearningRateMonitor(logging_interval='step')
+
+    logger.info('Building metric moniter.')
+    ckpt_callback = ModelCheckpoint(monitor='val/mask_loss', save_top_k=5)
     
     logger.info('Building Tensorboard logger.')
     tb_logger = TensorBoardLogger('checkpoints', **config.logger)
@@ -52,7 +55,7 @@ def train(config, args, logger):
     valset, val_loader = load_dataset(config.valset)
 
     logger.info('Building Train phase Trainer.')
-    trainer = Trainer(**config.trainer, callbacks=[lr_monitor], logger=tb_logger)
+    trainer = Trainer(**config.trainer, callbacks=[lr_monitor, ckpt_callback], logger=tb_logger)
     
     if args.best_lr:
         import matplotlib.pyplot as plt

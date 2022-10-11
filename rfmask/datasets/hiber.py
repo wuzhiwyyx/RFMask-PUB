@@ -17,6 +17,7 @@ import pickle
 import torch
 from torch.utils.data.dataloader import default_collate
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
+from torchvision.transforms import Resize, InterpolationMode
 
 import itertools
 import lmdb
@@ -140,9 +141,10 @@ class HiberTrans():
         return arr
     
     def __call__(self, hors, vers, hboxes, vboxes, silhouettes, v, category=False):
-        hors = torch.from_numpy(self.norm(hors))
+        # hors, vers = self.norm(hors), self.norm(vers)
+        hors = torch.from_numpy(hors)
         hors = hors.float().contiguous()
-        vers = torch.from_numpy(self.norm(vers))
+        vers = torch.from_numpy(vers)
         vers = vers.float().contiguous()
         
         # box shape: nperson, 4, seq_len
@@ -154,6 +156,7 @@ class HiberTrans():
         categories = None if not category else _
 
         silhouettes = torch.from_numpy(silhouettes.copy()).float()
+        silhouettes = Resize((624, 820), interpolation=InterpolationMode.NEAREST)(silhouettes)
         v = torch.from_numpy(v).long()
         return hors, vers, hboxes, vboxes, silhouettes, categories, v
 

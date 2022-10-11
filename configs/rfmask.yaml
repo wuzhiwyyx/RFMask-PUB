@@ -1,32 +1,34 @@
 # dataset path
-TRAIN_DATA: &TRAIN_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_train.lmdb
-VAL_DATA: &VAL_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_val.lmdb
+TRAIN_DATA: &TRAIN_DATA data/hiber_train.lmdb
+VAL_DATA: &VAL_DATA data/hiber_val.lmdb
 
 # subset
-CATEGORIES: &CATEGORIES ['MULTI']
+CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
 
 MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name
-EXPER: &EXPER 'rfmask'
+EXPER: &EXPER 'rfmask_wma'
 
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 120
-            LEARNING_RATE: &LR 1.0e-3
+            BATCH_SIZE: &TRAIN_BATCH 48
+            LEARNING_RATE: &LR 1.5e-4
     TRAINER:
         MAX_EPOCHS: 200
-        PRECISION: 32
+        PRECISION: 16
         DEVICES: -1
         ACCELERATOR: gpu
-        STRATEGY: ddp # ddp_find_unused_parameters_false
-        SYNC_BATCHNORM: true
-        RELOAD_DATALOADERS_EVERY_N_EPOCHS: 10
+        # STRATEGY: ddp # ddp_find_unused_parameters_false
+        SYNC_BATCHNORM: false
+        RELOAD_DATALOADERS_EVERY_N_EPOCHS: 0
         LOG_EVERY_N_STEPS: 15
-        PROFILER: pytorch
+        # PROFILER: pytorch
+        # OVERFIT_BATCHES: 0.2
+        # ACCUMULATE_GRAD_BATCHES: 3
     TRAINSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -37,7 +39,7 @@ TRAIN:
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: true
-            NUM_WORKERS: &TRAIN_NUM_WORKERS 8
+            NUM_WORKERS: &TRAIN_NUM_WORKERS 4
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -49,7 +51,7 @@ TRAIN:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
             NUM_WORKERS: *TRAIN_NUM_WORKERS
-    CKPT_PATH: 
+    CKPT_PATH:
     LOGGER:
         NAME: *EXPER
 
@@ -57,9 +59,9 @@ EVAL:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &VAL_BATCH 1
+            BATCH_SIZE: &VAL_BATCH 3
             LEARNING_RATE: *LR
-    CKPT_PATH: checkpoints/base/version_1/checkpoints/epoch=199-step=6016.ckpt
+    CKPT_PATH: checkpoints/rfmask_debug/version_0/checkpoints/epoch=199-step=65600.ckpt
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
