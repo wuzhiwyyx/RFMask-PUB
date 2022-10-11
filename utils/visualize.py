@@ -68,7 +68,7 @@ def rfmask_visualize(dataset, preds):
         
         gt = d[4].numpy()
         gt = np.max(gt, axis=0)
-        gt = cv2.resize(gt, (820, 624), None, None, interpolation=cv2.INTER_NEAREST)
+        # gt = cv2.resize(gt, (820, 624), None, None, interpolation=cv2.INTER_NEAREST)
         canvas = np.concatenate([gt, pred], axis=1) * 255
         canvas = canvas.astype(np.uint8)
         canvas = np.stack([canvas] * 3, axis=2)

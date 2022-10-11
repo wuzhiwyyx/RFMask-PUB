@@ -9,7 +9,7 @@ MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name
-EXPER: &EXPER 'rfmask_walk_lr1e-4_cos40'
+EXPER: &EXPER 'rfmask_wma'
 
 TRAIN:
     MODEL:
@@ -22,11 +22,13 @@ TRAIN:
         PRECISION: 16
         DEVICES: -1
         ACCELERATOR: gpu
-        STRATEGY: ddp # ddp_find_unused_parameters_false
-        SYNC_BATCHNORM: true
+        # STRATEGY: ddp # ddp_find_unused_parameters_false
+        SYNC_BATCHNORM: false
         RELOAD_DATALOADERS_EVERY_N_EPOCHS: 0
         LOG_EVERY_N_STEPS: 15
         # PROFILER: pytorch
+        # OVERFIT_BATCHES: 0.2
+        # ACCUMULATE_GRAD_BATCHES: 3
     TRAINSET:
         NAME: *DATASET_NAME
         DATASET:

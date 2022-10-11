@@ -1,12 +1,15 @@
 import sys
 sys.path.append('.')
 import random
+import matplotlib.pyplot as plt
+import torch
+import project
 
-from rfmask import RFMask
+# from rfmask import RFMask
 from utils import load_config, build_model, load_dataset, ConfigDict
 
-import torch
 from tqdm import tqdm
+from matplotlib.patches import Rectangle
 # torch.cuda.set_device(0)
 
 # torch.backends.cudnn.benchmark = False
@@ -54,9 +57,26 @@ for i, h_item in enumerate(tqdm(hiber_loader)):
             x[k] = x[k].cuda()
         data[3].append(x)
     assert not 0 in [x['masks'].shape[0] for x in data[3]]
-    
+    # masks = [x['masks'].cpu() for x in data[3]]
+    # hboxes = [x['hboxes'].cpu() for x in data[3]]
+    # vboxes = [x['vboxes'].cpu() for x in data[3]]
+    # v_props, proposals = project.calc_v_props(hboxes, [torch.tensor([6])], project=True, pad=25)
+    # fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+    # for i, (mask, prop) in enumerate(zip(masks, proposals)):
+    #     for j, (m, p) in enumerate(zip(mask, prop)):
+    #         x, y, x_, y_ = p
+    #         rect = Rectangle((x, y), x_ - x, y_ - y, linewidth=2, edgecolor='w', facecolor='none')
+    #         axes[j].imshow(m)
+    #         axes[j].add_patch(rect)
+    # plt.savefig('test1.jpg')
     # torch.cuda.empty_cache()
-    _ = model(*data[:])
+    # print([x.shape for x in data[:3]])
+    # print([x.shape for y in data[3] for x in y.values()])
+    # data
+    # plt.imshow(data[0][0][5].cpu().detach().numpy())
+    # plt.savefig('test1.jpg')
+    _ = model(*data[:-1])
+    # _
     
 # print(f'output {len(_)}')
 # print(config)

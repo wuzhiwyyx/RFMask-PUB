@@ -28,7 +28,7 @@ def rfmask_postprocess(prediction, thresh=0.2):
         batch_pred, loss = batch_pred
         for pred in batch_pred:
             if pred['masks'].shape[0] == 0:
-                pred['masks'] = torch.zeros((1, 1, 624, 820))
+                pred['masks'] = torch.zeros((1, 1, 1248 // 2, 1640 // 2)) # torch.zeros((1, 1, 624, 820))
             mask = pred['masks'].max(dim=0)[0].squeeze()
             mask = mask.cpu().float().numpy()
             mask[mask < thresh] = 0
@@ -73,7 +73,7 @@ def rfmask_iou(dataset, preds):
 
         gt = d[4].numpy()
         gt = np.max(gt, axis=0)
-        gt = cv2.resize(gt, (820, 624), None, None, interpolation=cv2.INTER_NEAREST)
+        # gt = cv2.resize(gt, (820, 624), None, None, interpolation=cv2.INTER_NEAREST)
         results.append(iou(p, gt))
         pbar.update(1)
     pbar.close()

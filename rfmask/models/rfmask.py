@@ -37,7 +37,7 @@ class RFMask(nn.Module):
         self.vbranch = Branch(Encoder()) if dual else None
         self.num_classes = 2
         self.dual = dual
-        self.mask_size = (624, 820)
+        self.mask_size = (624, 820) # (1248, 1640)
         self.roi_heads = RFRoIHeads(self.hbranch.out_channels, dual=dual, fuse=fuse)
 
     def prepare_targets(self, targets, key='hboxes'):
@@ -140,6 +140,14 @@ class RFMask(nn.Module):
 
         result, losses = self.roi_heads(h_bundle, v_bundle, params, targets)
 
+        # # Calculate mask results
+        # for i, pred in enumerate(result):
+        #     masks = pred["masks"]
+        #     boxes = pred['boxes']
+        #     o_im_s = self.mask_size
+        #     masks = self.paste_masks_in_image(masks, boxes, o_im_s)
+        #     result[i]["masks"] = masks
+        
         # If targets is passed then loss value will be returned, else losses is None.
         if not targets is None:
             rpn_loss = {}
@@ -149,6 +157,7 @@ class RFMask(nn.Module):
                 rpn_loss['loss_v_obj'] = v_prop_losses['loss_objectness']
                 rpn_loss['loss_v_rpn_box'] = v_prop_losses['loss_rpn_box_reg']
             losses.update(rpn_loss)
+            
             return result, losses
         else:
             for i, pred in enumerate(result):

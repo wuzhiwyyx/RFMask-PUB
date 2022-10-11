@@ -144,4 +144,6 @@ test*
 *.pkl
 RFMask_pred.py
 results/
+project.py
+reorder_mask.py
 old_code
