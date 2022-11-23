@@ -10,10 +10,12 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
+from torchvision.ops import boxes as box_ops
+from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
-from torchvision.ops import boxes as box_ops, roi_align
 
 from ..datasets import camera_parameter
+
 
 class RFTransform(GeneralizedRCNNTransform):
     """Data transformation. Normalize input data."""

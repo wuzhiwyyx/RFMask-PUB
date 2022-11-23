@@ -7,12 +7,12 @@
  '''
 
 
-import logging
 import datetime
+import logging
 import os
 import sys
-from logging import StreamHandler, Handler, getLevelName
 import time
+from logging import Handler, StreamHandler, getLevelName
 
 
 def build_logger(config, phase='train', model_name='Model'):

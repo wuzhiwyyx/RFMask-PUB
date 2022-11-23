@@ -7,11 +7,12 @@
  '''
 
 
-from torch.utils import data
 import os
-import numpy as np
 import pickle
+
+import numpy as np
 import torch
+from torch.utils import data
 from torch.utils.data.dataloader import default_collate
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 

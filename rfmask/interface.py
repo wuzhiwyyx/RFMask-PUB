@@ -6,15 +6,15 @@
  # @ Description: Pytorch-lightning model definition, controlling training strategy and train/val/test dataset.
  '''
 
-import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from torch import optim
 import pytorch_lightning as pl
+import torch
+from torch import nn, optim
+from torch.utils.data import DataLoader
 
 from .models import RFMask as RFMask_
 from .models import RFPose2DMask as RFPose2DMask_
 from .models import iou
+
 
 class RFMask(pl.LightningModule):
     """Pytorch-lightning interface of RFMask, 

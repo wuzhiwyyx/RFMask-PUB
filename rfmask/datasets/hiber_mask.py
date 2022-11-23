@@ -7,13 +7,12 @@
  '''
 
 
-from torch.utils import data
+import cv2
+import HIBERTools as hiber
 import lmdb
 import numpy as np
-import cv2
 import torch
-import HIBERTools as hiber
-
+from torch.utils import data
 from torch.utils.data.dataloader import default_collate
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 

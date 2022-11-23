@@ -1,15 +1,17 @@
 import sys
+
 sys.path.append('.')
 import random
+
 import matplotlib.pyplot as plt
+# import project
 import torch
-import project
+from matplotlib.patches import Rectangle
+from tqdm import tqdm
 
 # from rfmask import RFMask
-from utils import load_config, build_model, load_dataset, ConfigDict
+from utils import ConfigDict, build_model, load_config, load_dataset
 
-from tqdm import tqdm
-from matplotlib.patches import Rectangle
 # torch.cuda.set_device(0)
 
 # torch.backends.cudnn.benchmark = False

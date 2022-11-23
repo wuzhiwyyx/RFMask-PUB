@@ -6,11 +6,13 @@
  # @ Description: Postprocessing prediction results.
  '''
 
+import cv2
 import numpy as np
 import torch
-import cv2
 from tqdm import tqdm
+
 from .evaluation import box_iou
+
 
 def postprocess(model_name, prediction, thresh=0.2):
     post = {

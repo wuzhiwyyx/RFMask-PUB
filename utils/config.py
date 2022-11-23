@@ -8,6 +8,7 @@
 
 from yaml import Loader, load
 
+
 class ConfigDict(dict):
     """
     Access-by-attribute, case-insensitive dictionary

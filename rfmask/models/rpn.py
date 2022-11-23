@@ -6,9 +6,9 @@
  # @ Description: RF Region proposal network
  '''
 
-from torchvision.models.detection.rpn import RPNHead, RegionProposalNetwork
 from torchvision.models.detection.anchor_utils import AnchorGenerator
-from torchvision.models.detection.rpn import concat_box_prediction_layers
+from torchvision.models.detection.rpn import (RegionProposalNetwork, RPNHead,
+                                              concat_box_prediction_layers)
 
 
 class RFRPN(RegionProposalNetwork):

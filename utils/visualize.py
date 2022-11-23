@@ -8,13 +8,14 @@
 
 
 import io
-import torch
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib.patches import Rectangle
-import numpy as np
-from tqdm import tqdm
+
 import cv2
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from matplotlib.patches import Rectangle
+from tqdm import tqdm
 
 
 def fig2npy(fig):

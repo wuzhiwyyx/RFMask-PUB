@@ -1,16 +1,26 @@
+'''
+ # @ Author: Zhi Wu
+ # @ Create Time: 1970-01-01 00:00:00
+ # @ Modified by: Zhi Wu
+ # @ Modified time: 2022-11-23 08:50:51
+ # @ Description: RoIHeads module definition.
+ '''
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torchvision.models.detection.roi_heads import RoIHeads, fastrcnn_loss
-from torchvision.ops import MultiScaleRoIAlign
-from torchvision.models.detection.faster_rcnn import TwoMLPHead, FastRCNNPredictor
+from torch.jit.annotations import Dict, List, Optional, Tuple
+from torchvision.models.detection.faster_rcnn import (FastRCNNPredictor,
+                                                      TwoMLPHead)
 from torchvision.models.detection.mask_rcnn import MaskRCNNHeads
 # from torchvision.models.detection.roi_heads import maskrcnn_loss, maskrcnn_inference
-from torchvision.models.detection.roi_heads import maskrcnn_inference
-from torch.jit.annotations import Optional, List, Dict, Tuple
+from torchvision.models.detection.roi_heads import (RoIHeads, fastrcnn_loss,
+                                                    maskrcnn_inference)
+from torchvision.ops import MultiScaleRoIAlign
 
 from .predictor import RFMaskRCNNPredictor
 from .utils import calc_v_props, maskrcnn_loss
+
 
 class RFRoIHeads(RoIHeads):
     """RFRoIHeads is the core part of RFMask, it is responsible for regressing 2D detection

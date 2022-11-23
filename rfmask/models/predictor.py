@@ -6,8 +6,10 @@
  # @ Description: Predictor definition.
  '''
 
-import torch.nn as nn
 from collections import OrderedDict
+
+import torch.nn as nn
+
 
 class RFMaskRCNNPredictor(nn.Sequential):
     def __init__(self, in_channels, dim_reduced, num_classes):

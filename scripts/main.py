@@ -13,9 +13,9 @@ sys.path.append('.')  # run from project root
 import argparse
 import pickle
 import pprint
-import pytorch_lightning as pl
-
 from pathlib import Path
+
+import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger

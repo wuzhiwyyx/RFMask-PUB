@@ -6,15 +6,17 @@
  # @ Description: Branch definition, containing Encoder module.
  '''
 
+from collections import OrderedDict
 from turtle import forward
+
 import torch.nn as nn
 from torchvision.models.detection.anchor_utils import AnchorGenerator
-from torchvision.models.detection.rpn import RPNHead, RegionProposalNetwork
-from collections import OrderedDict
+from torchvision.models.detection.rpn import RegionProposalNetwork, RPNHead
 
-from .backbone import resnet_fpn_backbone, misc_nn_ops
-from .utils import RFTransform
+from .backbone import misc_nn_ops, resnet_fpn_backbone
 from .rpn import RFRPN
+from .utils import RFTransform
+
 
 class Encoder(nn.Module):
     """Backbone feature extractor. We tried two kinds of backbone structures. 

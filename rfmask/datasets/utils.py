@@ -12,6 +12,7 @@ from .hiber import HIBERDataset, HiberTrans, hiber_collate
 from .hiber_mask import HIBERMaskDataset, HIBERMaskTrans
 from .rf_dataset import RFDataset, RFTrans, rf_collate
 
+
 def load_rf_dataset(config):
     """Load rf dataset from file
 

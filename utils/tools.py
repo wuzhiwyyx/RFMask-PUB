@@ -7,7 +7,9 @@
  '''
 
 from rfmask import RFMask, RFPose2DMask
-from rfmask.datasets import load_hiber_dataset, load_rf_dataset, load_hiber_mask_dataset
+from rfmask.datasets import (load_hiber_dataset, load_hiber_mask_dataset,
+                             load_rf_dataset)
+
 
 def build_model(cfg):
     """Build model object

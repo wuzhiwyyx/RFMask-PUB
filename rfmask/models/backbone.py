@@ -6,9 +6,10 @@
  # @ Description: RFMask backbone definition
  '''
 
-from torchvision.ops import misc as misc_nn_ops
 from torchvision.models.detection.backbone_utils import BackboneWithFPN, resnet
+from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops.feature_pyramid_network import LastLevelMaxPool
+
 
 def resnet_fpn_backbone(
     backbone_name,

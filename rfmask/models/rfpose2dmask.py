@@ -11,15 +11,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 from torch import Tensor
-from torchvision.models.detection.roi_heads import expand_masks, expand_boxes
-from torchvision.transforms import Resize
-from torchvision.transforms import InterpolationMode
+from torch.jit.annotations import Dict, List, Optional, Tuple
+from torchvision.models.detection.roi_heads import expand_boxes, expand_masks
+from torchvision.transforms import InterpolationMode, Resize
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
-
-from .branch import Branch, Encoder, RFPose2DEncoder, RFPose2DDecoder
+from .branch import Branch, Encoder, RFPose2DDecoder, RFPose2DEncoder
 from .roi_heads import RFRoIHeads
 from .utils import _onnx_paste_masks_in_image_loop
+
 
 class RFPose2DMask(nn.Module):
     """
