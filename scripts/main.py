@@ -6,28 +6,30 @@
  # @ Description: Train and evaluation script.
  '''
 
-import time
 import sys
+import time
 
 sys.path.append('.')  # run from project root
 import argparse
 import pickle
 import pprint
+import pytorch_lightning as pl
 
 from pathlib import Path
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from utils import build_model, load_dataset
-from utils import build_logger, load_config, postprocess
-from utils import generate_video, visualize, calc_avg_iou
+
+from utils import (build_logger, build_model, calc_avg_iou, generate_video,
+                   load_config, load_dataset, postprocess, visualize)
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', default='configs/config.yaml', help='config file path')
     parser.add_argument('--mode', default='train', choices=['train', 'eval'], help='train or evaluate')
     parser.add_argument('--save_vis', action='store_true', help='save_visualized_result')
-    parser.add_argument('--threshold', type=int, default=0.2, help='threshold of prediction')
+    parser.add_argument('--threshold', type=float, default=0.2, help='threshold of prediction')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--save_pred", action='store_true', help='save prediction results into prediction.pkl')
@@ -45,7 +47,12 @@ def train(config, args, logger):
     lr_monitor = LearningRateMonitor(logging_interval='step')
 
     logger.info('Building metric moniter.')
-    ckpt_callback = ModelCheckpoint(monitor='val/mask_loss', save_top_k=5)
+    ckpt_callback = ModelCheckpoint(
+        monitor='val/mask_loss', save_top_k=5, 
+        filename='epoch={epoch}-step={step}-mloss={val/mask_loss:.2f}',
+        auto_insert_metric_name=False,
+        save_last=True, verbose=True
+    )
     
     logger.info('Building Tensorboard logger.')
     tb_logger = TensorBoardLogger('checkpoints', **config.logger)
@@ -128,6 +135,7 @@ def eval(config, args, logger):
 if __name__ == '__main__':
     args = parse_args()
     config = load_config(args.cfg)
+    pl.seed_everything(1)
     
     logger = build_logger(config, args.mode, model_name=config.model_name)
     logger.info(args)

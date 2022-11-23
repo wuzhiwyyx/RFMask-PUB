@@ -56,7 +56,11 @@ def rfpose2dmask_postprocess(prediction, thresh=0.2):
 
 
 def iou(mask1, mask2):
-    return np.sum(np.logical_and(mask1, mask2)) / np.sum(np.logical_or(mask1, mask2))
+    union = np.sum(np.logical_or(mask1, mask2))
+    if union == 0:
+        return np.nan
+    else:
+        return np.sum(np.logical_and(mask1, mask2)) / union
 
 def calc_avg_iou(model_name, dataset, preds):
     iou = {
@@ -70,7 +74,6 @@ def rfmask_iou(dataset, preds):
     results = []
     pbar = tqdm(total=len(dataset), desc='Calculating IoU')
     for d, p in zip(dataset, preds):
-
         gt = d[4].numpy()
         gt = np.max(gt, axis=0)
         # gt = cv2.resize(gt, (820, 624), None, None, interpolation=cv2.INTER_NEAREST)

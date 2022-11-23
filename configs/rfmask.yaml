@@ -1,26 +1,26 @@
 # dataset path
 TRAIN_DATA: &TRAIN_DATA data/hiber_train.lmdb
-VAL_DATA: &VAL_DATA data/hiber_val.lmdb
+VAL_DATA: &VAL_DATA data/hiber_train.lmdb
 
 # subset
-CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
+CATEGORIES: &CATEGORIES ['MULTI']
 
 MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name
-EXPER: &EXPER 'rfmask_wma'
+EXPER: &EXPER 'repro_cmp'
 
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 160
+            BATCH_SIZE: &TRAIN_BATCH 2
             LEARNING_RATE: &LR 1.5e-4
     TRAINER:
-        MAX_EPOCHS: 200
-        PRECISION: 16
-        DEVICES: -1
+        MAX_EPOCHS: 201
+        PRECISION: 32
+        DEVICES: [0]
         ACCELERATOR: gpu
         # STRATEGY: ddp # ddp_find_unused_parameters_false
         SYNC_BATCHNORM: false
@@ -36,10 +36,12 @@ TRAIN:
             MODE: train
             CATEGORIES: *CATEGORIES
             VIEWS: &VIEWS [6]
+            SPLIT_VIDEO: true
+            HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
-            SHUFFLE: true
-            NUM_WORKERS: &TRAIN_NUM_WORKERS 8
+            SHUFFLE: false
+            NUM_WORKERS: &TRAIN_NUM_WORKERS 0
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -47,11 +49,13 @@ TRAIN:
             MODE: val
             CATEGORIES: *CATEGORIES
             VIEWS: *VIEWS
+            SPLIT_VIDEO: true
+            HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
             NUM_WORKERS: *TRAIN_NUM_WORKERS
-    CKPT_PATH: 
+    CKPT_PATH: old_code/ours/trans_wma_repro/lightning_logs/version_0/checkpoints/last.ckpt
     LOGGER:
         NAME: *EXPER
 
@@ -61,7 +65,7 @@ EVAL:
         ARGS:
             BATCH_SIZE: &VAL_BATCH 1
             LEARNING_RATE: *LR
-    CKPT_PATH: checkpoints/rfmask_walk_lr0.02/version_0/checkpoints/epoch=199-step=3400.ckpt
+    CKPT_PATH: old_code/ours/trans_wma_repro/lightning_logs/version_0/checkpoints/last.ckpt
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -69,6 +73,8 @@ EVAL:
             MODE: val
             CATEGORIES: *CATEGORIES
             VIEWS: *VIEWS
+            SPLIT_VIDEO: true
+            HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *VAL_BATCH
             SHUFFLE: false

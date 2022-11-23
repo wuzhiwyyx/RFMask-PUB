@@ -7,27 +7,27 @@
  '''
 
 
-from copy import copy
-from turtle import shape
+import itertools
+import os
+import pickle
+
+import HIBERTools as hiber
+import lmdb
+import numpy as np
+import torch
 from matplotlib.pyplot import box
 from torch.utils import data
-import os
-import numpy as np
-import pickle
-import torch
 from torch.utils.data.dataloader import default_collate
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
-from torchvision.transforms import Resize, InterpolationMode
+from torchvision.transforms import InterpolationMode, Resize
 
-import itertools
-import lmdb
-import HIBERTools as hiber
 
 class HIBERDataset(data.Dataset):
     """Load HIBER Dataset from lmdb format."""
 
     def __init__(self, root, transform=None, mode='train', 
-                    categories=['WALK'], views=[6], channels=12, complex=False):
+                    categories=['WALK'], views=[6], channels=12, complex=False,
+                    split_video=False, cut_at=500, hiber_mode='train'):
         """HIBER Dataset constructor.
 
         Args:
@@ -41,16 +41,27 @@ class HIBERDataset(data.Dataset):
             complex (bool, optional): If true the shape of returned RF frame sequences is (channels, 2, 160, 200), 
                                             '2' means real and image channel of original complex RF frame, 
                                             else (channels, 160, 200). Defaults to False.
+            split_video (bool, optional): If true, the former part of each group will be as train set, the latter part
+                                            of each group will be as val/test set. Defaults to False.
+            cut_at (int, optional): Frames before cut_at in each group will be train set, frames after cut_at will be
+                                            val/test set. Defaults to 500.
+            hiber_mode (str, optional): When split_video is true, hiber_mode is used to judge which part of hiber should
+                                            be loaded, else useless. Defaults to 'train'.
         """
         self.root = root
         self.mode = mode
         self.views = views
         self.channels = channels
-        self.hiber_dataset = hiber.HIBERDataset(root, categories, mode) 
-        self.keys = self.__get_data_keys__()
         self.transform = transform
         self.complex = complex
-        self.env = lmdb.open(root, readonly=True, lock=False, readahead=False, meminit=False)
+
+        # These two lines is used to control split method.
+        self.split_video = split_video
+        self.cut_at = cut_at
+
+        self.hiber_dataset = hiber.HIBERDataset(root, categories, hiber_mode if self.split_video else mode) 
+        self.keys = self.__get_data_keys__()
+        # self.env = lmdb.open(root, readonly=True, lock=False, readahead=False, meminit=False)
     
     def __len__(self):
         return len(self.keys)
@@ -58,59 +69,75 @@ class HIBERDataset(data.Dataset):
     def __get_data_keys__(self):
         keys = self.hiber_dataset.get_lmdb_keys()
         # deal with sequence borders
-        lower_bound = self.channels // 2 // 2
-        upper_bound = 589 - self.channels // 2 // 2 + 1
+        if self.split_video:
+            start, end = (0, self.cut_at) if self.mode == 'train' else (self.cut_at, 590 - 1)
+        else:
+            start, end = 0, 590 -1
+        lower_bound = start + self.channels // 2 // 2
+        upper_bound = end - self.channels // 2 // 2 + 1
 
         filtered = [[int(y) for y in x[0][2:].split('_')] for x in keys]
         filtered = np.array(filtered)
         filtered = filtered[np.where(filtered[:, -1] >= lower_bound)]
         filtered = filtered[np.where(filtered[:, -1] < upper_bound)]
         filtered = filtered[np.where(np.isin(filtered[:, 0], self.views))]
+        filtered = filtered[filtered[:, 1].argsort()]
+        _ = np.split(filtered, filtered.shape[0] // (upper_bound-lower_bound), axis=0)
+        for i in range(len(_)):
+            _[i] = _[i][_[i][:, 2].argsort()]
+        filtered = np.concatenate(_, axis=0)
         return filtered
 
+    def open_lmdb(self):
+        self.env = lmdb.open(self.root, readonly=True, lock=False, readahead=False, meminit=False)
+        self.txn = self.env.begin(buffers=True, write=False)
+
     def __getitem__(self, index):
+        if not hasattr(self, 'txn'):
+            self.open_lmdb()
+            
         v, g, f = self.keys[index]
         start = f - self.channels // 2 // 2
         end = f + self.channels // 2 // 2
         keys = [[f'h_{v:02d}_{g:02d}_{x:04d}', f'v_{v:02d}_{g:02d}_{x:04d}',
-            f'hb_{v:02d}_{g:02d}_{x:04d}', f'hb_{v:02d}_{g:02d}_{x:04d}',
+            f'hb_{v:02d}_{g:02d}_{x:04d}', f'vb_{v:02d}_{g:02d}_{x:04d}',
             f'm_{v:02d}_{g:02d}_{x:04d}']
                  for x in range(start, end)]
-        with self.env.begin(write=False) as txn:
-            data_items = []
-            for ks in keys:
-                data_item = []
-                for k in ks:
-                    buf = txn.get(k.encode('ascii'))
-                    if k.startswith('m'):
-                        data = np.frombuffer(buf, dtype=bool)
-                    elif k.startswith(('h_', 'v_')):
-                        data = np.frombuffer(buf, dtype=np.complex128)
-                    else:
-                        data = np.frombuffer(buf, dtype=np.float64)
-                    data_item.append(data)
-                                
-                data_item[0] = data_item[0].reshape(2, 160, 200)
-                data_item[1] = data_item[1].reshape(2, 160, 200)
-
-                if self.complex:
-                    data_item[0] = data_item[0].view(dtype=np.float64)
-                    data_item[1] = data_item[1].view(dtype=np.float64)
-                    data_item[0] = data_item[0].reshape(2, 160, 200, 2)
-                    data_item[1] = data_item[1].reshape(2, 160, 200, 2)
-                    data_item[0] = data_item[0].transpose((0, 3, 1, 2))
-                    data_item[1] = data_item[1].transpose((0, 3, 1, 2))
+        # with self.env.begin(write=False) as txn:
+        data_items = []
+        for ks in keys:
+            data_item = []
+            for k in ks:
+                buf = self.txn.get(k.encode('ascii'))
+                if k.startswith('m'):
+                    data = np.frombuffer(buf, dtype=bool)
+                elif k.startswith(('h_', 'v_')):
+                    data = np.frombuffer(buf, dtype=np.complex128)
                 else:
-                    data_item[0] = np.abs(data_item[0])
-                    data_item[1] = np.abs(data_item[1])
-                data_item[2] = data_item[2].reshape(-1, 4)
-                data_item[3] = data_item[3].reshape(-1, 4)
-                data_item[4] = data_item[4].reshape(-1, 1248, 1640)
-                # Deal with zero mask results situation.
-                data_item[4] = np.concatenate([data_item[4], 
-                    np.zeros((data_item[2].shape[0] - data_item[4].shape[0], 1248, 1640))], axis=0)
-                assert data_item[4].shape[0]
-                data_items.append(data_item)
+                    data = np.frombuffer(buf, dtype=np.float64)
+                data_item.append(data)
+                            
+            data_item[0] = data_item[0].reshape(2, 160, 200)
+            data_item[1] = data_item[1].reshape(2, 160, 200)
+
+            if self.complex:
+                data_item[0] = data_item[0].view(dtype=np.float64)
+                data_item[1] = data_item[1].view(dtype=np.float64)
+                data_item[0] = data_item[0].reshape(2, 160, 200, 2)
+                data_item[1] = data_item[1].reshape(2, 160, 200, 2)
+                data_item[0] = data_item[0].transpose((0, 3, 1, 2))
+                data_item[1] = data_item[1].transpose((0, 3, 1, 2))
+            else:
+                data_item[0] = np.abs(data_item[0])
+                data_item[1] = np.abs(data_item[1])
+            data_item[2] = data_item[2].reshape(-1, 4)
+            data_item[3] = data_item[3].reshape(-1, 4)
+            data_item[4] = data_item[4].reshape(-1, 1248, 1640)
+            # Deal with zero mask results situation.
+            data_item[4] = np.concatenate([data_item[4], 
+                np.zeros((data_item[2].shape[0] - data_item[4].shape[0], 1248, 1640))], axis=0)
+            assert data_item[4].shape[0]
+            data_items.append(data_item)
 
         hors = np.concatenate([x[0] for x in data_items], axis=0)
         vers = np.concatenate([x[1] for x in data_items], axis=0)
@@ -156,6 +183,9 @@ class HiberTrans():
         categories = None if not category else _
 
         silhouettes = torch.from_numpy(silhouettes.copy()).float()
+        num = silhouettes.shape[0]
+        silhouettes = silhouettes.max(dim=0, keepdim=True)[0]
+        silhouettes = torch.cat([silhouettes] * num, dim=0)
         silhouettes = Resize((624, 820), interpolation=InterpolationMode.NEAREST)(silhouettes)
         v = torch.from_numpy(v).long()
         return hors, vers, hboxes, vboxes, silhouettes, categories, v

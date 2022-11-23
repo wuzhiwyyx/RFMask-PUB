@@ -147,3 +147,5 @@ results/
 project.py
 reorder_mask.py
 old_code
+debug_repro/*
+lightning_logs/*
