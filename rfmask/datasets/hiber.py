@@ -183,9 +183,6 @@ class HiberTrans():
         categories = None if not category else _
 
         silhouettes = torch.from_numpy(silhouettes.copy()).float()
-        num = silhouettes.shape[0]
-        silhouettes = silhouettes.max(dim=0, keepdim=True)[0]
-        silhouettes = torch.cat([silhouettes] * num, dim=0)
         silhouettes = Resize((624, 820), interpolation=InterpolationMode.NEAREST)(silhouettes)
         v = torch.from_numpy(v).long()
         return hors, vers, hboxes, vboxes, silhouettes, categories, v

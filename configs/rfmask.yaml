@@ -1,24 +1,25 @@
 # dataset path
 TRAIN_DATA: &TRAIN_DATA data/hiber_train.lmdb
-VAL_DATA: &VAL_DATA data/hiber_train.lmdb
+VAL_DATA: &VAL_DATA data/hiber_val.lmdb
+TEST_DATA: &TEST_DATA data/hiber_test.lmdb
 
 # subset
-CATEGORIES: &CATEGORIES ['MULTI']
+CATEGORIES: &CATEGORIES ['WALK']
 
 MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name
-EXPER: &EXPER 'repro_cmp'
+EXPER: &EXPER 'rfmask_debugged_new_split'
 
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
         ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 2
+            BATCH_SIZE: &TRAIN_BATCH 60
             LEARNING_RATE: &LR 1.5e-4
     TRAINER:
-        MAX_EPOCHS: 201
+        MAX_EPOCHS: 200
         PRECISION: 32
         DEVICES: [0]
         ACCELERATOR: gpu
@@ -36,12 +37,12 @@ TRAIN:
             MODE: train
             CATEGORIES: *CATEGORIES
             VIEWS: &VIEWS [6]
-            SPLIT_VIDEO: true
-            HIBER_MODE: train
+            # SPLIT_VIDEO: true
+            # HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
-            SHUFFLE: false
-            NUM_WORKERS: &TRAIN_NUM_WORKERS 0
+            SHUFFLE: true
+            NUM_WORKERS: &TRAIN_NUM_WORKERS 8
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -49,13 +50,13 @@ TRAIN:
             MODE: val
             CATEGORIES: *CATEGORIES
             VIEWS: *VIEWS
-            SPLIT_VIDEO: true
-            HIBER_MODE: train
+            # SPLIT_VIDEO: true
+            # HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
             NUM_WORKERS: *TRAIN_NUM_WORKERS
-    CKPT_PATH: old_code/ours/trans_wma_repro/lightning_logs/version_0/checkpoints/last.ckpt
+    CKPT_PATH: 
     LOGGER:
         NAME: *EXPER
 
@@ -65,7 +66,7 @@ EVAL:
         ARGS:
             BATCH_SIZE: &VAL_BATCH 1
             LEARNING_RATE: *LR
-    CKPT_PATH: old_code/ours/trans_wma_repro/lightning_logs/version_0/checkpoints/last.ckpt
+    CKPT_PATH: checkpoints/rfmask_debugged_new_split/version_0/checkpoints/epoch=42-step=12556-mloss=0.11.ckpt
     VALSET:
         NAME: *DATASET_NAME
         DATASET:
@@ -73,8 +74,8 @@ EVAL:
             MODE: val
             CATEGORIES: *CATEGORIES
             VIEWS: *VIEWS
-            SPLIT_VIDEO: true
-            HIBER_MODE: train
+            # SPLIT_VIDEO: true
+            # HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *VAL_BATCH
             SHUFFLE: false
