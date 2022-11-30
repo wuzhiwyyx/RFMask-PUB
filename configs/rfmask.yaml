@@ -10,12 +10,12 @@ MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name
-EXPER: &EXPER 'rfmask'
+EXPER: &EXPER 'test'
 
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
-        BATCH_SIZE: &TRAIN_BATCH 2
+        BATCH_SIZE: &TRAIN_BATCH 60
         LEARNING_RATE: &LR 1.5e-4
     TRAINER:
         MAX_EPOCHS: 200

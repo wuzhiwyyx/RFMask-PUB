@@ -20,8 +20,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from utils import (build_logger, build_model, calc_avg_iou, generate_video,
-                   load_config, load_dataset, postprocess, visualize)
+from utils import (build_logger, build_model, load_config, load_dataset)
 
 
 def parse_args():

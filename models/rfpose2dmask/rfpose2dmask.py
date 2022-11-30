@@ -15,9 +15,7 @@ from torch.jit.annotations import Dict, List, Optional, Tuple
 from torchvision.models.detection.roi_heads import expand_boxes, expand_masks
 from torchvision.transforms import InterpolationMode, Resize
 
-from .branch import Branch, Encoder, RFPose2DDecoder, RFPose2DEncoder
-from .roi_heads import RFRoIHeads
-from .utils import _onnx_paste_masks_in_image_loop
+from .branch import RFPose2DDecoder, RFPose2DEncoder
 
 
 class RFPose2DMask(nn.Module):

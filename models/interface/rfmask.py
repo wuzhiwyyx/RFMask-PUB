@@ -15,7 +15,7 @@ import pytorch_lightning as pl
 import torch
 from torch import optim
 
-from ..models import RFMask as RFMask_
+from ..rfmask import RFMask as RFMask_
 from .utils import close_and_rename, close_writer, init_writer, iou
 
 

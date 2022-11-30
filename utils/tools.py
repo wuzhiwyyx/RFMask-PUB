@@ -6,9 +6,10 @@
  # @ Description: Collection of some useful functions for running the whole project.
  '''
 
-from rfmask.interface import RFMask, RFPose2DMask
-from rfmask.interface.rfmask import postprocess as rfmask_postproc
-from rfmask.datasets import (load_hiber_dataset, load_hiber_mask_dataset,
+from models.interface import RFMask, RFPose2DMask
+from models.interface.rfmask import postprocess as rfmask_postproc
+from models.interface.rfpose2dmask import postprocess as rfpose2dmask_postproc
+from models.datasets import (load_hiber_dataset, load_hiber_mask_dataset,
                              load_rf_dataset)
 
 
@@ -38,7 +39,8 @@ def load_dataset(dataset, **kwargs):
 
 def postprocess(name, **kwargs):
     procs = {
-        'RFMask': rfmask_postproc
+        'RFMask': rfmask_postproc,
+        'RFPose2DMask': rfpose2dmask_postproc
     }
     return procs[name](**kwargs)
 

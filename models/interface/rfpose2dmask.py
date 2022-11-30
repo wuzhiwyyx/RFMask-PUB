@@ -16,7 +16,7 @@ import torch
 from torch import optim
 from torchvision.transforms import InterpolationMode, Resize
 
-from ..models import RFPose2DMask as RFPose2DMask_
+from ..rfpose2dmask import RFPose2DMask as RFPose2DMask_
 from .utils import close_and_rename, close_writer, init_writer, iou
 
 
