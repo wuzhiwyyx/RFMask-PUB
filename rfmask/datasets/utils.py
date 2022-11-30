@@ -13,7 +13,7 @@ from .hiber_mask import HIBERMaskDataset, HIBERMaskTrans
 from .rf_dataset import RFDataset, RFTrans, rf_collate
 
 
-def load_rf_dataset(config):
+def load_rf_dataset(loader={}, **kwargs):
     """Load rf dataset from file
 
     Args:
@@ -22,11 +22,11 @@ def load_rf_dataset(config):
     Returns:
         (Dataset, DataLoader): _description_
     """
-    dataset = RFDataset(**config.dataset, transform=RFTrans())
-    loader = DataLoader(dataset, **config.loader, drop_last=True, collate_fn=rf_collate)
+    dataset = RFDataset(**kwargs, transform=RFTrans())
+    loader = DataLoader(dataset, **loader, drop_last=True, collate_fn=rf_collate)
     return dataset, loader
 
-def load_hiber_dataset(config):
+def load_hiber_dataset(loader={}, **kwargs):
     """Load HIBER dataset from LMDB file
 
     Args:
@@ -35,11 +35,11 @@ def load_hiber_dataset(config):
     Returns:
         (Dataset, DataLoader): _description_
     """
-    dataset = HIBERDataset(**config.dataset, transform=HiberTrans())
-    loader = DataLoader(dataset, **config.loader, drop_last=True, collate_fn=hiber_collate)
+    dataset = HIBERDataset(**kwargs, transform=HiberTrans())
+    loader = DataLoader(dataset, **loader, drop_last=True, collate_fn=hiber_collate)
     return dataset, loader
 
-def load_hiber_mask_dataset(config):
+def load_hiber_mask_dataset(loader={}, **kwargs):
     """Load HIBER mask dataset from LMDB file
 
     Args:
@@ -48,8 +48,8 @@ def load_hiber_mask_dataset(config):
     Returns:
         (Dataset, DataLoader): _description_
     """
-    dataset = HIBERMaskDataset(**config.dataset, transform=HIBERMaskTrans())
-    loader = DataLoader(dataset, **config.loader, drop_last=True)
+    dataset = HIBERMaskDataset(**kwargs, transform=HIBERMaskTrans())
+    loader = DataLoader(dataset, **loader, drop_last=True)
     return dataset, loader
 
 

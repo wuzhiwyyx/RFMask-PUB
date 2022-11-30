@@ -126,7 +126,7 @@ def setup_logger(name, save_dir, distributed_rank, filename="log.txt"):
     ch.setLevel(logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s: %(message)s")
     ch.setFormatter(formatter)
-    logging.Formatter.converter = beijing
+    # logging.Formatter.converter = beijing
     logger.addHandler(ch)
 
     if save_dir:
@@ -138,25 +138,26 @@ def setup_logger(name, save_dir, distributed_rank, filename="log.txt"):
     return logger
 
 def setup_logger_ddp(exp_name, save_dir, time_str, distributed_rank, model_name, phase='train'):
-    logger = logging.getLogger(model_name)
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger('pytorch_lightning')
+    logger.setLevel(logging.INFO)
     # don't log results for the non-master process
     if distributed_rank > 0:
         return logger
-    ch = logging.StreamHandler(stream=sys.stdout)
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s: %(message)s")
+    # ch = logging.StreamHandler(stream=sys.stdout)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    formatter = logging.Formatter(f"%(asctime)s {model_name} %(levelname)s: %(message)s")
     ch.setFormatter(formatter)
-    logging.Formatter.converter = beijing
+    # logging.Formatter.converter = beijing
     logger.addHandler(ch)
 
     if save_dir:
         
         log_file = '{}_{}_{}.log'.format(exp_name, time_str, phase)
         fh = FileHandler(os.path.join(save_dir, log_file))
-        fh.setLevel(logging.DEBUG)
+        fh.setLevel(logging.INFO)
         fh.setFormatter(formatter)
-        logging.Formatter.converter = beijing
+        # logging.Formatter.converter = beijing
         logger.addHandler(fh)
 
     return logger

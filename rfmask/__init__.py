@@ -1,2 +1,3 @@
-from . import datasets, models
-from .interface import *
+from . import datasets
+from . import models
+from . import interface

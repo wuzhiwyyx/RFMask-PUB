@@ -4,20 +4,19 @@ VAL_DATA: &VAL_DATA data/hiber_val.lmdb
 TEST_DATA: &TEST_DATA data/hiber_test.lmdb
 
 # subset
-CATEGORIES: &CATEGORIES ['WALK']
+CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
 
 MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
 
 # experiment name
-EXPER: &EXPER 'rfmask_debugged_new_split'
+EXPER: &EXPER 'rfmask'
 
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
-        ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 60
-            LEARNING_RATE: &LR 1.5e-4
+        BATCH_SIZE: &TRAIN_BATCH 2
+        LEARNING_RATE: &LR 1.5e-4
     TRAINER:
         MAX_EPOCHS: 200
         PRECISION: 32
@@ -28,30 +27,28 @@ TRAIN:
         RELOAD_DATALOADERS_EVERY_N_EPOCHS: 0
         LOG_EVERY_N_STEPS: 15
         # PROFILER: pytorch
-        # OVERFIT_BATCHES: 0.2
+        # OVERFIT_BATCHES: 0.02
         # ACCUMULATE_GRAD_BATCHES: 3
     TRAINSET:
-        NAME: *DATASET_NAME
-        DATASET:
-            ROOT: *TRAIN_DATA
-            MODE: train
-            CATEGORIES: *CATEGORIES
-            VIEWS: &VIEWS [6]
-            # SPLIT_VIDEO: true
-            # HIBER_MODE: train
+        DATASET: *DATASET_NAME
+        ROOT: *TRAIN_DATA
+        MODE: train
+        CATEGORIES: *CATEGORIES
+        VIEWS: &VIEWS [6]
+        # SPLIT_VIDEO: true
+        # HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: true
             NUM_WORKERS: &TRAIN_NUM_WORKERS 8
     VALSET:
-        NAME: *DATASET_NAME
-        DATASET:
-            ROOT: *VAL_DATA
-            MODE: val
-            CATEGORIES: *CATEGORIES
-            VIEWS: *VIEWS
-            # SPLIT_VIDEO: true
-            # HIBER_MODE: train
+        DATASET: *DATASET_NAME
+        ROOT: *VAL_DATA
+        MODE: val
+        CATEGORIES: *CATEGORIES
+        VIEWS: *VIEWS
+        # SPLIT_VIDEO: true
+        # HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
@@ -63,19 +60,19 @@ TRAIN:
 EVAL:
     MODEL:
         NAME: *MODEL_NAME
-        ARGS:
-            BATCH_SIZE: &VAL_BATCH 1
-            LEARNING_RATE: *LR
+        BATCH_SIZE: &VAL_BATCH 1
+        LEARNING_RATE: *LR
+        THRESHOLD: 0.3
+        EXPER: *EXPER
     CKPT_PATH: checkpoints/rfmask_debugged_new_split/version_0/checkpoints/epoch=42-step=12556-mloss=0.11.ckpt
     VALSET:
-        NAME: *DATASET_NAME
-        DATASET:
-            ROOT: *VAL_DATA
-            MODE: val
-            CATEGORIES: *CATEGORIES
-            VIEWS: *VIEWS
-            # SPLIT_VIDEO: true
-            # HIBER_MODE: train
+        DATASET: *DATASET_NAME
+        ROOT: *TEST_DATA
+        MODE: test
+        CATEGORIES: *CATEGORIES
+        VIEWS: *VIEWS
+        # SPLIT_VIDEO: true
+        # HIBER_MODE: train
         LOADER:
             BATCH_SIZE: *VAL_BATCH
             SHUFFLE: false
@@ -86,6 +83,5 @@ EVAL:
         DEVICES: [0]
         ACCELERATOR: gpu
         LOGGER: false
-    EXPER: *EXPER
 
 

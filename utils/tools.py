@@ -6,12 +6,13 @@
  # @ Description: Collection of some useful functions for running the whole project.
  '''
 
-from rfmask import RFMask, RFPose2DMask
+from rfmask.interface import RFMask, RFPose2DMask
+from rfmask.interface.rfmask import postprocess as rfmask_postproc
 from rfmask.datasets import (load_hiber_dataset, load_hiber_mask_dataset,
                              load_rf_dataset)
 
 
-def build_model(cfg):
+def build_model(name, **kwargs):
     """Build model object
 
     Args:
@@ -25,15 +26,21 @@ def build_model(cfg):
         'RFMask_single': RFMask,
         'RFPose2DMask' : RFPose2DMask
     }
-    return models[cfg.name](**cfg.args)
+    return models[name](**kwargs)
     
-def load_dataset(config):
-    _ = {
+def load_dataset(dataset, **kwargs):
+    datasets = {
         'hiber' : load_hiber_dataset,
         'rf' : load_rf_dataset,
         'hiber_mask' : load_hiber_mask_dataset
     }
-    return _[config.name](config)
+    return datasets[dataset](**kwargs)
+
+def postprocess(name, **kwargs):
+    procs = {
+        'RFMask': rfmask_postproc
+    }
+    return procs[name](**kwargs)
 
 def data2cuda(data):
     """_summary_
