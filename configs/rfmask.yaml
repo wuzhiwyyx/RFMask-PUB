@@ -4,7 +4,7 @@ VAL_DATA: &VAL_DATA data/hiber_val.lmdb
 TEST_DATA: &TEST_DATA data/hiber_test.lmdb
 
 # subset
-CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
+CATEGORIES: &CATEGORIES ['ACTION']
 
 MODEL_NAME: &MODEL_NAME RFMask
 DATASET_NAME: &DATASET_NAME hiber
@@ -62,9 +62,9 @@ EVAL:
         NAME: *MODEL_NAME
         BATCH_SIZE: &VAL_BATCH 1
         LEARNING_RATE: *LR
-        THRESHOLD: 0.3
+        THRESHOLD: 0.4
         EXPER: *EXPER
-    CKPT_PATH: checkpoints/rfmask_debugged_new_split/version_0/checkpoints/epoch=42-step=12556-mloss=0.11.ckpt
+    CKPT_PATH: checkpoints/rfmask_debugged_new_split/version_0/checkpoints/last.ckpt
     VALSET:
         DATASET: *DATASET_NAME
         ROOT: *TEST_DATA

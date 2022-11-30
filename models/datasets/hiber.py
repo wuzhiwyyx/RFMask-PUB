@@ -82,6 +82,8 @@ class HIBERDataset(data.Dataset):
         filtered = filtered[np.where(filtered[:, -1] < upper_bound)]
         filtered = filtered[np.where(np.isin(filtered[:, 0], self.views))]
         filtered = filtered[filtered[:, 1].argsort()]
+        if filtered.shape[0] == 0:
+            return filtered
         _ = np.split(filtered, filtered.shape[0] // (upper_bound-lower_bound), axis=0)
         for i in range(len(_)):
             _[i] = _[i][_[i][:, 2].argsort()]
