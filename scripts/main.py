@@ -47,7 +47,7 @@ def train(config, args, logger):
     logger.info('Building metric moniter.')
     ckpt_callback = ModelCheckpoint(
         monitor='val/mask_loss', save_top_k=5, 
-        filename='epoch={epoch}-step={step}-mloss={val/mask_loss:.2f}',
+        filename='e{epoch}-s{step}-mloss={val/mask_loss:.2f}',
         auto_insert_metric_name=False,
         save_last=True, verbose=True
     )

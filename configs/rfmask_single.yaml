@@ -1,6 +1,7 @@
 # dataset path
-TRAIN_DATA: &TRAIN_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_train.lmdb
-VAL_DATA: &VAL_DATA /share2/home/wuzhi/workspace/RFMask/data/hiber_val.lmdb
+TRAIN_DATA: &TRAIN_DATA data/hiber_train.lmdb
+VAL_DATA: &VAL_DATA data/hiber_val.lmdb
+TEST_DATA: &TEST_DATA data/hiber_test.lmdb
 
 # subset
 CATEGORIES: &CATEGORIES ['WALK', 'MULTI', 'ACTION']
@@ -14,38 +15,34 @@ EXPER: &EXPER 'rfmask_single'
 TRAIN:
     MODEL:
         NAME: *MODEL_NAME
-        ARGS:
-            BATCH_SIZE: &TRAIN_BATCH 180
-            LEARNING_RATE: &LR 1.0e-3
-            DUAL: false
-            FUSE: multi-head
+        BATCH_SIZE: &TRAIN_BATCH 60
+        LEARNING_RATE: &LR 1.5e-4
+        DUAL: false
     TRAINER:
         MAX_EPOCHS: 200
         PRECISION: 32
-        DEVICES: -1
+        DEVICES: [0]
         ACCELERATOR: gpu
-        STRATEGY: ddp # ddp_find_unused_parameters_false
-        SYNC_BATCHNORM: true
-        RELOAD_DATALOADERS_EVERY_N_EPOCHS: 10
+        # STRATEGY: ddp # ddp_find_unused_parameters_false
+        SYNC_BATCHNORM: false
+        RELOAD_DATALOADERS_EVERY_N_EPOCHS: 0
         LOG_EVERY_N_STEPS: 15
     TRAINSET:
-        NAME: *DATASET_NAME
-        DATASET:
-            ROOT: *TRAIN_DATA
-            MODE: train
-            CATEGORIES: *CATEGORIES
-            VIEWS: &VIEWS [6]
+        DATASET: *DATASET_NAME
+        ROOT: *TRAIN_DATA
+        MODE: train
+        CATEGORIES: *CATEGORIES
+        VIEWS: &VIEWS [6]
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: true
-            NUM_WORKERS: &TRAIN_NUM_WORKERS 4
+            NUM_WORKERS: &TRAIN_NUM_WORKERS 8
     VALSET:
-        NAME: *DATASET_NAME
-        DATASET:
-            ROOT: *VAL_DATA
-            MODE: val
-            CATEGORIES: *CATEGORIES
-            VIEWS: *VIEWS
+        DATASET: *DATASET_NAME
+        ROOT: *VAL_DATA
+        MODE: val
+        CATEGORIES: *CATEGORIES
+        VIEWS: *VIEWS
         LOADER:
             BATCH_SIZE: *TRAIN_BATCH
             SHUFFLE: false
@@ -57,17 +54,17 @@ TRAIN:
 EVAL:
     MODEL:
         NAME: *MODEL_NAME
-        ARGS:
-            BATCH_SIZE: &VAL_BATCH 1
-            LEARNING_RATE: *LR
-    CKPT_PATH: /share2/home/wuzhi/workspace/RFTrack/checkpoints/abs_coor/version_1/checkpoints/epoch=199-step=19399.ckpt
+        BATCH_SIZE: &VAL_BATCH 1
+        LEARNING_RATE: *LR
+        THRESHOLD: 0.4
+        EXPER: *EXPER
+    CKPT_PATH: 
     VALSET:
-        NAME: *DATASET_NAME
-        DATASET:
-            ROOT: *VAL_DATA
-            MODE: val
-            CATEGORIES: *CATEGORIES
-            VIEWS: *VIEWS
+        DATASET: *DATASET_NAME
+        ROOT: *VAL_DATA
+        MODE: val
+        CATEGORIES: *CATEGORIES
+        VIEWS: *VIEWS
         LOADER:
             BATCH_SIZE: *VAL_BATCH
             SHUFFLE: false
@@ -78,6 +75,5 @@ EVAL:
         DEVICES: [0]
         ACCELERATOR: gpu
         LOGGER: false
-    EXPER: *EXPER
 
 
