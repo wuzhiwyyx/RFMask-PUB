@@ -9,12 +9,6 @@ The proposed RFMask framework is composed of three modules. It first transforms 
 
 To verify our proposed framework, we collect a dataset containing 804,760 radio frames and 402,380 camera frames with human activities under various scenes. Experimental results show that the proposed framework can achieve impressive human silhouette segmentation even under the challenging scenarios (such as low light and occlusion scenarios) where traditional optical-camera-based methods fail. To the best of our knowledge, this is the first investigation towards segmenting human silhouette based on millimeter wave signals.
 
-## Install
-
-```
-conda env create -f environment.yaml
-pip install -r requirements.txt
-```
 
 ## Results
 - Qualitative results
