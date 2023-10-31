@@ -21,22 +21,6 @@ pip install -r requirements.txt
   ![qualitative results](assets/images/qualitati_results.jpg)
 
 
-## Usage
-
-
-### Training
-
-```shell
-ulimit -n 1048576
-python scrips/main.py
-```
-
-### Evaluation
-
-```shell
-python scripts/main.py --save_vis --save_pred
-```
-
 ## Citation
 
 Please cite the following papers [RFMask](https://ieeexplore.ieee.org/abstract/document/9793363):
