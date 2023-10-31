@@ -6,52 +6,6 @@
  # @ Description: Dataset loader.
  '''
 
-from torch.utils.data import DataLoader
-
-from .hiber import HIBERDataset, HiberTrans, hiber_collate
-from .hiber_mask import HIBERMaskDataset, HIBERMaskTrans
-from .rf_dataset import RFDataset, RFTrans, rf_collate
-
-
-def load_rf_dataset(loader={}, **kwargs):
-    """Load rf dataset from file
-
-    Args:
-        config (dict): Dict object containing dataset initial parameters and dataloader initial parameters.
-
-    Returns:
-        (Dataset, DataLoader): _description_
-    """
-    dataset = RFDataset(**kwargs, transform=RFTrans())
-    loader = DataLoader(dataset, **loader, drop_last=True, collate_fn=rf_collate)
-    return dataset, loader
-
-def load_hiber_dataset(loader={}, **kwargs):
-    """Load HIBER dataset from LMDB file
-
-    Args:
-        config (dict): Dict object containing dataset initial parameters and dataloader initial parameters.
-
-    Returns:
-        (Dataset, DataLoader): _description_
-    """
-    dataset = HIBERDataset(**kwargs, transform=HiberTrans())
-    loader = DataLoader(dataset, **loader, drop_last=True, collate_fn=hiber_collate)
-    return dataset, loader
-
-def load_hiber_mask_dataset(loader={}, **kwargs):
-    """Load HIBER mask dataset from LMDB file
-
-    Args:
-        config (dict): Dict object containing dataset initial parameters and dataloader initial parameters.
-
-    Returns:
-        (Dataset, DataLoader): _description_
-    """
-    dataset = HIBERMaskDataset(**kwargs, transform=HIBERMaskTrans())
-    loader = DataLoader(dataset, **loader, drop_last=True)
-    return dataset, loader
-
 
 camera_parameter = {
     'view01' : {

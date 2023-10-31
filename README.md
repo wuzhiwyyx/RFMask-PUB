@@ -17,19 +17,6 @@ pip install -r requirements.txt
 ```
 
 ## Results
-- Quantitative results
-
-  Model|WALK|MULTI|ACTION|config|weights
-  :--:|:--:|:--:|:--:|:--:|:--:
-  RFPose2dMask ( seq4 )| |  | | |
-  RFPose2dMask ( seq12 )| 0.664| 0.671| 0.689| [rfpose2dmask.yaml](configs/rfpose2dmask.yaml)|
-  RFPose2dMask ( seq32 )| | | | |
-  RFMask ( res18 )| 0.742|0.698 | 0.737| [rfmask.yaml](configs/rfmask.yaml)|
-  RFMask ( res34 )| | | | |
-  RFMask ( res50 )| | | | |
-  RFMask_single ( res34 ) | | | | |
-  RFMask w/o MHF ( res34 )| | | | |
-
 - Qualitative results
   ![qualitative results](assets/images/qualitati_results.jpg)
 
